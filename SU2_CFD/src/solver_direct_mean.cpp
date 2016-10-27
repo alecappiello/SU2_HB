@@ -9371,20 +9371,20 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
 
 
         	/*--- Retrieve the specified total conditions for this boundary. ---*/
-          P_Total = geometry->GetSpline(NonUniformBC_Coord, NonUniformBC_Var1, NonUniformBC_d2Var1, NonUniformBC_InputPoints, y_perio);
-          if (gravity) {
-          	P_Total -= geometry->node[iPoint]->GetCoord(nDim-1)*STANDART_GRAVITY;/// check in which case is true (only freesurface?)
-          }
+        	P_Total = geometry->GetSpline(NonUniformBC_Coord, NonUniformBC_Var1, NonUniformBC_d2Var1, NonUniformBC_InputPoints, y_perio);
+        	if (gravity) {
+        		P_Total -= geometry->node[iPoint]->GetCoord(nDim-1)*STANDART_GRAVITY;/// check in which case is true (only freesurface?)
+        	}
 
-          T_Total  = geometry->GetSpline(NonUniformBC_Coord, NonUniformBC_Var2, NonUniformBC_d2Var2, NonUniformBC_InputPoints, y_perio);
-          Flow_Dir[0] = geometry->GetSpline(NonUniformBC_Coord, NonUniformBC_FlowDir_x, NonUniformBC_d2FlowDir_x, NonUniformBC_InputPoints, y_perio);
-          Flow_Dir[1] = geometry->GetSpline(NonUniformBC_Coord, NonUniformBC_FlowDir_y, NonUniformBC_d2FlowDir_y, NonUniformBC_InputPoints, y_perio);
-          Flow_Dir[2] = geometry->GetSpline(NonUniformBC_Coord, NonUniformBC_FlowDir_z, NonUniformBC_d2FlowDir_z, NonUniformBC_InputPoints, y_perio);
+        	T_Total  = geometry->GetSpline(NonUniformBC_Coord, NonUniformBC_Var2, NonUniformBC_d2Var2, NonUniformBC_InputPoints, y_perio);
+        	Flow_Dir[0] = geometry->GetSpline(NonUniformBC_Coord, NonUniformBC_FlowDir_x, NonUniformBC_d2FlowDir_x, NonUniformBC_InputPoints, y_perio);
+        	Flow_Dir[1] = geometry->GetSpline(NonUniformBC_Coord, NonUniformBC_FlowDir_y, NonUniformBC_d2FlowDir_y, NonUniformBC_InputPoints, y_perio);
+        	Flow_Dir[2] = geometry->GetSpline(NonUniformBC_Coord, NonUniformBC_FlowDir_z, NonUniformBC_d2FlowDir_z, NonUniformBC_InputPoints, y_perio);
 
-//					P_Total = config->GetNonUniform_Var1(Marker_Tag)*(1+0.1*sin(2*PI_NUMBER/config->GetSpectralMethod_Period()*Physical_t));
-          /*--- Non-dim. the inputs if necessary. ---*/
-          P_Total /= config->GetPressure_Ref();
-          T_Total /= config->GetTemperature_Ref();
+        	//					P_Total = config->GetNonUniform_Var1(Marker_Tag)*(1+0.1*sin(2*PI_NUMBER/config->GetSpectralMethod_Period()*Physical_t));
+        	/*--- Non-dim. the inputs if necessary. ---*/
+        	P_Total /= config->GetPressure_Ref();
+        	T_Total /= config->GetTemperature_Ref();
 
 
           /* --- Computes the total state --- */
