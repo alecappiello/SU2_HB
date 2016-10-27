@@ -840,6 +840,7 @@ static const map<string, RIEMANN_TYPE> NRBC_Map = CCreateMap<string, RIEMANN_TYP
 
 static const map<string, RIEMANN_TYPE> NonUniform_Map = CCreateMap<string, RIEMANN_TYPE>
 ("TOTAL_CONDITIONS_PT", TOTAL_CONDITIONS_PT)
+("DENSITY_VELOCITY", DENSITY_VELOCITY)
 ("STATIC_PRESSURE", STATIC_PRESSURE);
 
 static const map<string, RIEMANN_TYPE> TurboNonUniform_Map = CCreateMap<string, RIEMANN_TYPE>

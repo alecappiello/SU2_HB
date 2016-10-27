@@ -9426,6 +9426,25 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
           Energy_e = FluidModel->GetStaticEnergy() + 0.5*Velocity2_e;
           break;
 
+
+        case DENSITY_VELOCITY:
+          su2double VelMag_e;
+
+        	/*--- Retrieve the specified density and velocity magnitude ---*/
+        	Density_e  = config->GetRiemann_Var1(Marker_Tag);
+        	VelMag_e   = config->GetRiemann_Var2(Marker_Tag);
+        	Flow_Dir = config->GetRiemann_FlowDir(Marker_Tag);
+
+        	/*--- Non-dim. the inputs if necessary. ---*/
+        	Density_e /= config->GetDensity_Ref();
+        	VelMag_e /= config->GetVelocity_Ref();
+
+        	for (iDim = 0; iDim < nDim; iDim++)
+        		Velocity_e[iDim] = VelMag_e*Flow_Dir[iDim];
+        	Energy_e = Energy_i;
+        	break;
+
+
         default:
           cout << "Warning! Invalid type of Non Uniform BC option!" << endl;
           exit(EXIT_FAILURE);
