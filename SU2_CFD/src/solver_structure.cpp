@@ -276,8 +276,7 @@ void CSolver::SetGrid_Movement_Residual (CGeometry *geometry, CConfig *config) {
   
   /*--- Loop interior edges ---*/
    
-  for (iEdge = 0; iEdge < geometry->GetnEdge(); iEdge++) {
-    
+  for (iEdge = 0; iEdge < geometry->GetnEdge(); iEdge++) { 
     const unsigned long iPoint = geometry->edge[iEdge]->GetNode(0);
     const unsigned long jPoint = geometry->edge[iEdge]->GetNode(1);
     
@@ -354,7 +353,7 @@ void CSolver::SetAuxVar_Gradient_GG(CGeometry *geometry, CConfig *config) {
     node[iPoint]->SetAuxVarGradientZero();    // Set Gradient to Zero
   
   /*--- Loop interior edges ---*/
-  
+
   for (iEdge = 0; iEdge < geometry->GetnEdge(); iEdge++) {
     iPoint = geometry->edge[iEdge]->GetNode(0);
     jPoint = geometry->edge[iEdge]->GetNode(1);
@@ -1603,189 +1602,99 @@ void CSolver::SolveTypicalSectionWingModel(CGeometry *geometry, su2double Cl, su
 
 void CSolver::Restart_OldGeometry(CGeometry *geometry, CConfig *config) {
 
-  /*--- This function is intended for dual time simulations ---*/
+    /*--- This function is intended for dual time simulations ---*/
 
-  unsigned long iPoint, index;
+    unsigned long iPoint, index;
 
-  int Unst_RestartIter;
-  ifstream restart_file_n;
-  unsigned short iZone = config->GetiZone();
-  unsigned short nZone = geometry->GetnZone();
-  string filename = config->GetSolution_FlowFileName();
-  string filename_n;
+    int Unst_RestartIter;
+    ifstream restart_file_n;
+    unsigned short iZone = config->GetiZone();
+    unsigned short nZone = geometry->GetnZone();
+    string filename = config->GetSolution_FlowFileName();
+    string filename_n;
 
-  /*--- Auxiliary vector for storing the coordinates ---*/
-  su2double *Coord;
-  Coord = new su2double[nDim];
+    /*--- Auxiliary vector for storing the coordinates ---*/
+    su2double *Coord;
+    Coord = new su2double[nDim];
 
-  /*--- Variables for reading the restart files ---*/
-  string text_line;
-  long iPoint_Local;
-  unsigned long iPoint_Global_Local = 0, iPoint_Global = 0;
-  unsigned short rbuf_NotMatching, sbuf_NotMatching;
+    /*--- Variables for reading the restart files ---*/
+    string text_line;
+    long iPoint_Local;
+    unsigned long iPoint_Global_Local = 0, iPoint_Global = 0;
+    unsigned short rbuf_NotMatching, sbuf_NotMatching;
 
-  int rank = MASTER_NODE;
+    int rank = MASTER_NODE;
 #ifdef HAVE_MPI
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 #endif
 
-  /*--- Multizone problems require the number of the zone to be appended. ---*/
+    /*--- Multizone problems require the number of the zone to be appended. ---*/
 
-  if (nZone > 1)
-    filename = config->GetMultizone_FileName(filename, iZone);
+    if (nZone > 1)
+        filename = config->GetMultizone_FileName(filename, iZone);
 
-  /*--- First, we load the restart file for time n ---*/
+    /*--- First, we load the restart file for time n ---*/
 
-  /*-------------------------------------------------------------------------------------------*/
-
-  /*--- Modify file name for an unsteady restart ---*/
-  Unst_RestartIter = SU2_TYPE::Int(config->GetUnst_RestartIter())-1;
-  filename_n = config->GetUnsteady_FileName(filename, Unst_RestartIter);
-
-  /*--- Open the restart file, throw an error if this fails. ---*/
-
-  restart_file_n.open(filename_n.data(), ios::in);
-  if (restart_file_n.fail()) {
-    if (rank == MASTER_NODE)
-      cout << "There is no flow restart file!! " << filename_n.data() << "."<< endl;
-    exit(EXIT_FAILURE);
-  }
-
-  /*--- In case this is a parallel simulation, we need to perform the
-     Global2Local index transformation first. ---*/
-
-  map<unsigned long,unsigned long> Global2Local_n;
-  map<unsigned long,unsigned long>::const_iterator MI;
-
-  /*--- First, set all indices to a negative value by default, and Global n indices to 0 ---*/
-  iPoint_Global_Local = 0, iPoint_Global = 0;
-
-  /*--- Now fill array with the transform values only for local points ---*/
-
-  for (iPoint = 0; iPoint < geometry->GetnPointDomain(); iPoint++)
-    Global2Local_n[geometry->node[iPoint]->GetGlobalIndex()] = iPoint;
-
-  /*--- Read all lines in the restart file ---*/
-  /*--- The first line is the header ---*/
-
-  getline (restart_file_n, text_line);
-
-  for (iPoint_Global = 0; iPoint_Global < geometry->GetGlobal_nPointDomain(); iPoint_Global++ ) {
-    
-    getline (restart_file_n, text_line);
-    
-    istringstream point_line(text_line);
-
-    /*--- Retrieve local index. If this node from the restart file lives
-     on the current processor, we will load and instantiate the vars. ---*/
-    
-    MI = Global2Local_n.find(iPoint_Global);
-    if (MI != Global2Local_n.end()) {
-      
-      iPoint_Local = Global2Local_n[iPoint_Global];
-
-      if (nDim == 2) point_line >> index >> Coord[0] >> Coord[1];
-      if (nDim == 3) point_line >> index >> Coord[0] >> Coord[1] >> Coord[2];
-
-      geometry->node[iPoint_Local]->SetCoord_n(Coord);
-
-      iPoint_Global_Local++;
-    }
-  }
-
-  /*--- Detect a wrong solution file ---*/
-
-  rbuf_NotMatching = 0, sbuf_NotMatching = 0;
-
-  if (iPoint_Global_Local < geometry->GetnPointDomain()) { sbuf_NotMatching = 1; }
-
-#ifndef HAVE_MPI
-  rbuf_NotMatching = sbuf_NotMatching;
-#else
-  SU2_MPI::Allreduce(&sbuf_NotMatching, &rbuf_NotMatching, 1, MPI_UNSIGNED_SHORT, MPI_SUM, MPI_COMM_WORLD);
-#endif
-  if (rbuf_NotMatching != 0) {
-    if (rank == MASTER_NODE) {
-      cout << endl << "The solution file " << filename_n.data() << " doesn't match with the mesh file!" << endl;
-      cout << "It could be empty lines at the end of the file." << endl << endl;
-    }
-#ifndef HAVE_MPI
-    exit(EXIT_FAILURE);
-#else
-    MPI_Barrier(MPI_COMM_WORLD);
-    MPI_Abort(MPI_COMM_WORLD,1);
-    MPI_Finalize();
-#endif
-  }
-
-  /*--- Close the restart file ---*/
-
-  restart_file_n.close();
-
-  /*-------------------------------------------------------------------------------------------*/
-  /*-------------------------------------------------------------------------------------------*/
-
-  /*--- Now, we load the restart file for time n-1, if the simulation is 2nd Order ---*/
-
-  if (config->GetUnsteady_Simulation() == DT_STEPPING_2ND) {
-
-    ifstream restart_file_n1;
-    string filename_n1;
+    /*-------------------------------------------------------------------------------------------*/
 
     /*--- Modify file name for an unsteady restart ---*/
-    Unst_RestartIter = SU2_TYPE::Int(config->GetUnst_RestartIter())-2;
-    filename_n1 = config->GetUnsteady_FileName(filename, Unst_RestartIter);
+    Unst_RestartIter = SU2_TYPE::Int(config->GetUnst_RestartIter())-1;
+    filename_n = config->GetUnsteady_FileName(filename, Unst_RestartIter);
 
     /*--- Open the restart file, throw an error if this fails. ---*/
 
-    restart_file_n.open(filename_n1.data(), ios::in);
+    restart_file_n.open(filename_n.data(), ios::in);
     if (restart_file_n.fail()) {
-      if (rank == MASTER_NODE)
-        cout << "There is no flow restart file!! " << filename_n1.data() << "."<< endl;
-      exit(EXIT_FAILURE);
+        if (rank == MASTER_NODE)
+            cout << "There is no flow restart file!! " << filename_n.data() << "."<< endl;
+        exit(EXIT_FAILURE);
     }
 
     /*--- In case this is a parallel simulation, we need to perform the
-         Global2Local index transformation first. ---*/
+     Global2Local index transformation first. ---*/
 
-    map<unsigned long,unsigned long> Global2Local_n1;
-    map<unsigned long,unsigned long>::const_iterator MI;
+    long *Global2Local_n = new long[geometry->GetGlobal_nPointDomain()];
 
     /*--- First, set all indices to a negative value by default, and Global n indices to 0 ---*/
     iPoint_Global_Local = 0, iPoint_Global = 0;
 
+    for (iPoint = 0; iPoint < geometry->GetGlobal_nPointDomain(); iPoint++)
+        Global2Local_n[iPoint] = -1;
+
     /*--- Now fill array with the transform values only for local points ---*/
 
     for (iPoint = 0; iPoint < geometry->GetnPointDomain(); iPoint++)
-      Global2Local_n1[geometry->node[iPoint]->GetGlobalIndex()] = iPoint;
+        Global2Local_n[geometry->node[iPoint]->GetGlobalIndex()] = iPoint;
 
     /*--- Read all lines in the restart file ---*/
     /*--- The first line is the header ---*/
 
     getline (restart_file_n, text_line);
 
-    for (iPoint_Global = 0; iPoint_Global < geometry->GetGlobal_nPointDomain(); iPoint_Global++ ) {
-      
-      getline (restart_file_n, text_line);
-      
-      istringstream point_line(text_line);
+    while (getline (restart_file_n, text_line)) {
+        istringstream point_line(text_line);
 
-      /*--- Retrieve local index. If this node from the restart file lives
-       on the current processor, we will load and instantiate the vars. ---*/
-      
-      MI = Global2Local_n1.find(iPoint_Global);
-      if (MI != Global2Local_n1.end()) {
-        
-        iPoint_Local = Global2Local_n1[iPoint_Global];
+        /*--- Retrieve local index. If this node from the restart file lives
+       on a different processor, the value of iPoint_Local will be -1.
+       Otherwise, the local index for this node on the current processor
+       will be returned and used to instantiate the vars. ---*/
 
-        if (nDim == 2) point_line >> index >> Coord[0] >> Coord[1];
-        if (nDim == 3) point_line >> index >> Coord[0] >> Coord[1] >> Coord[2];
+        iPoint_Local = Global2Local_n[iPoint_Global];
 
-        geometry->node[iPoint_Local]->SetCoord_n1(Coord);
+        /*--- Load the solution for this node. Note that the first entry
+       on the restart file line is the global index, followed by the
+       node coordinates, and then the conservative variables. ---*/
 
-        iPoint_Global_Local++;
-      }
+        if (iPoint_Local >= 0) {
 
+            if (nDim == 2) point_line >> index >> Coord[0] >> Coord[1];
+            if (nDim == 3) point_line >> index >> Coord[0] >> Coord[1] >> Coord[2];
+
+            geometry->node[iPoint_Local]->SetCoord_n(Coord);
+
+            iPoint_Global_Local++;
+        }
+        iPoint_Global++;
     }
 
     /*--- Detect a wrong solution file ---*/
@@ -1799,29 +1708,138 @@ void CSolver::Restart_OldGeometry(CGeometry *geometry, CConfig *config) {
 #else
     SU2_MPI::Allreduce(&sbuf_NotMatching, &rbuf_NotMatching, 1, MPI_UNSIGNED_SHORT, MPI_SUM, MPI_COMM_WORLD);
 #endif
+
     if (rbuf_NotMatching != 0) {
-      if (rank == MASTER_NODE) {
-        cout << endl << "The solution file " << filename_n1.data() << " doesn't match with the mesh file!" << endl;
-        cout << "It could be empty lines at the end of the file." << endl << endl;
-      }
+        if (rank == MASTER_NODE) {
+            cout << endl << "The solution file " << filename_n.data() << " doesn't match with the mesh file!" << endl;
+            cout << "It could be empty lines at the end of the file." << endl << endl;
+        }
 #ifndef HAVE_MPI
-      exit(EXIT_FAILURE);
+        exit(EXIT_FAILURE);
 #else
-      MPI_Barrier(MPI_COMM_WORLD);
-      MPI_Abort(MPI_COMM_WORLD,1);
-      MPI_Finalize();
+        MPI_Barrier(MPI_COMM_WORLD);
+        MPI_Abort(MPI_COMM_WORLD,1);
+        MPI_Finalize();
 #endif
     }
 
     /*--- Close the restart file ---*/
 
-    restart_file_n1.close();
+    restart_file_n.close();
 
-  }
+    /*--- Free memory needed for the transformation ---*/
 
-  /*--- It's necessary to communicate this information ---*/
+    delete [] Global2Local_n;
 
-  geometry->Set_MPI_OldCoord(config);
+    /*-------------------------------------------------------------------------------------------*/
+    /*-------------------------------------------------------------------------------------------*/
+
+    /*--- Now, we load the restart file for time n-1, if the simulation is 2nd Order ---*/
+
+    if (config->GetUnsteady_Simulation() == DT_STEPPING_2ND){
+
+        ifstream restart_file_n1;
+        string filename_n1;
+
+        /*--- Modify file name for an unsteady restart ---*/
+        Unst_RestartIter = SU2_TYPE::Int(config->GetUnst_RestartIter())-2;
+        filename_n1 = config->GetUnsteady_FileName(filename, Unst_RestartIter);
+
+        /*--- Open the restart file, throw an error if this fails. ---*/
+
+        restart_file_n.open(filename_n1.data(), ios::in);
+        if (restart_file_n.fail()) {
+            if (rank == MASTER_NODE)
+                cout << "There is no flow restart file!! " << filename_n1.data() << "."<< endl;
+            exit(EXIT_FAILURE);
+        }
+
+        /*--- In case this is a parallel simulation, we need to perform the
+         Global2Local index transformation first. ---*/
+
+        long *Global2Local_n1 = new long[geometry->GetGlobal_nPointDomain()];
+
+        /*--- First, set all indices to a negative value by default, and Global n indices to 0 ---*/
+        iPoint_Global_Local = 0, iPoint_Global = 0;
+
+        for (iPoint = 0; iPoint < geometry->GetGlobal_nPointDomain(); iPoint++)
+            Global2Local_n1[iPoint] = -1;
+
+        /*--- Now fill array with the transform values only for local points ---*/
+
+        for (iPoint = 0; iPoint < geometry->GetnPointDomain(); iPoint++)
+            Global2Local_n1[geometry->node[iPoint]->GetGlobalIndex()] = iPoint;
+
+        /*--- Read all lines in the restart file ---*/
+        /*--- The first line is the header ---*/
+
+        getline (restart_file_n, text_line);
+
+        while (getline (restart_file_n, text_line)) {
+            istringstream point_line(text_line);
+
+            /*--- Retrieve local index. If this node from the restart file lives
+           on a different processor, the value of iPoint_Local will be -1.
+           Otherwise, the local index for this node on the current processor
+           will be returned and used to instantiate the vars. ---*/
+
+            iPoint_Local = Global2Local_n1[iPoint_Global];
+
+            /*--- Load the solution for this node. Note that the first entry
+           on the restart file line is the global index, followed by the
+           node coordinates, and then the conservative variables. ---*/
+
+            if (iPoint_Local >= 0) {
+
+                if (nDim == 2) point_line >> index >> Coord[0] >> Coord[1];
+                if (nDim == 3) point_line >> index >> Coord[0] >> Coord[1] >> Coord[2];
+
+                geometry->node[iPoint_Local]->SetCoord_n1(Coord);
+
+                iPoint_Global_Local++;
+            }
+            iPoint_Global++;
+        }
+
+        /*--- Detect a wrong solution file ---*/
+
+        rbuf_NotMatching = 0, sbuf_NotMatching = 0;
+
+        if (iPoint_Global_Local < geometry->GetnPointDomain()) { sbuf_NotMatching = 1; }
+
+#ifndef HAVE_MPI
+        rbuf_NotMatching = sbuf_NotMatching;
+#else
+        SU2_MPI::Allreduce(&sbuf_NotMatching, &rbuf_NotMatching, 1, MPI_UNSIGNED_SHORT, MPI_SUM, MPI_COMM_WORLD);
+#endif
+
+        if (rbuf_NotMatching != 0) {
+            if (rank == MASTER_NODE) {
+                cout << endl << "The solution file " << filename_n1.data() << " doesn't match with the mesh file!" << endl;
+                cout << "It could be empty lines at the end of the file." << endl << endl;
+            }
+#ifndef HAVE_MPI
+            exit(EXIT_FAILURE);
+#else
+            MPI_Barrier(MPI_COMM_WORLD);
+            MPI_Abort(MPI_COMM_WORLD,1);
+            MPI_Finalize();
+#endif
+        }
+
+        /*--- Close the restart file ---*/
+
+        restart_file_n1.close();
+
+        /*--- Free memory needed for the transformation ---*/
+
+        delete [] Global2Local_n1;
+
+    }
+
+    /*--- It's necessary to communicate this information ---*/
+
+    geometry->Set_MPI_OldCoord(config);
   
   delete [] Coord;
 
@@ -1829,7 +1847,8 @@ void CSolver::Restart_OldGeometry(CGeometry *geometry, CConfig *config) {
 
 CBaselineSolver::CBaselineSolver(void) : CSolver() { }
 
-CBaselineSolver::CBaselineSolver(CGeometry *geometry, CConfig *config, unsigned short nVar, vector<string> field_names) {
+
+CBaselineSolver::CBaselineSolver(CGeometry *geometry, CConfig *config, unsigned short nVar, vector<string> field_names){
 
   unsigned long iPoint;
   unsigned short iVar;
@@ -1838,7 +1857,7 @@ CBaselineSolver::CBaselineSolver(CGeometry *geometry, CConfig *config, unsigned 
 
   Solution = new su2double[nVar];
 
-  for (iVar = 0; iVar < nVar; iVar++) {
+  for (iVar = 0; iVar < nVar; iVar++){
     Solution[iVar] = 0.0;
   }
 
@@ -1850,7 +1869,7 @@ CBaselineSolver::CBaselineSolver(CGeometry *geometry, CConfig *config, unsigned 
 
   node = new CVariable*[geometry->GetnPoint()];
 
-  for (iPoint = 0; iPoint < geometry->GetnPoint(); iPoint++) {
+  for (iPoint = 0; iPoint < geometry->GetnPoint(); iPoint++){
 
     node[iPoint] = new CBaselineVariable(Solution, nVar, config);
 

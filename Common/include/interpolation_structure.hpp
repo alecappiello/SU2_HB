@@ -87,9 +87,9 @@ protected:
 
 
 public:
-  CGeometry*** Geometry; 		/*! \brief Vector which stores n zones of geometry. */
-  CGeometry* donor_geometry; 	/*! \brief Vector which stores the donor geometry. */
-  CGeometry* target_geometry; 	/*! \brief Vector which stores the target geometry. */
+  CGeometry*** Geometry;        /*! \brief Vector which stores n zones of geometry. */
+  CGeometry* donor_geometry;    /*! \brief Vector which stores the donor geometry. */
+  CGeometry* target_geometry;   /*! \brief Vector which stores the target geometry. */
 
   /*!
    * \brief Constructor of the class.
@@ -115,7 +115,7 @@ public:
    * \param[in] config - Definition of the particular problem.
    * \param[in] val_marker_interface - Interface tag.
    */
-   int Find_InterfaceMarker(CConfig *config, unsigned short val_marker_interface);
+  int Find_InterfaceMarker(CConfig *config, unsigned short val_marker_interface);
 
   /*!
    * \brief Set up transfer matrix defining relation between two meshes
@@ -253,5 +253,8 @@ public:
    * \param[in] config - Definition of the particular problem.
    */
   void Set_TransferCoeff(CConfig **config);
-
+  
 };
+
+
+

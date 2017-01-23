@@ -1,7 +1,7 @@
 /*!
  * \file interpolation_structure.cpp
  * \brief Main subroutines used by SU2_FSI
- * \author H. Kline
+ * \author H. Kline, G. Gori
  * \version 5.0.0 "Raven"
  *
  * SU2 Lead Developers: Dr. Francisco Palacios (Francisco.D.Palacios@boeing.com).
@@ -96,6 +96,7 @@ CInterpolator::CInterpolator(CGeometry ***geometry_container, CConfig **config, 
 inline void CInterpolator::Set_TransferCoeff(CConfig **config) { }
 
 void CInterpolator::Determine_ArraySize(bool faces, int markDonor, int markTarget, unsigned long nVertexDonor, unsigned short nDim) {
+
   unsigned long nLocalVertex_Donor = 0, nLocalFaceNodes_Donor=0, nLocalFace_Donor=0;
   unsigned long iVertex, iPointDonor = 0;
   /* Only needed if face data is also collected */
@@ -129,29 +130,31 @@ void CInterpolator::Determine_ArraySize(bool faces, int markDonor, int markTarge
                 /*--- Local index of the node on face --*/
                 inode = donor_geometry->elem[donor_elem]->GetFaces(iFace, iDonor);
                 jPoint = donor_geometry->elem[donor_elem]->GetNode(inode);
+
                 face_on_marker = (face_on_marker && (donor_geometry->node[jPoint]->GetVertex(markDonor) !=-1));
               }
               if (face_on_marker ) {
                 nLocalFace_Donor++;
-                nLocalFaceNodes_Donor+=nNodes;
+                nLocalFaceNodes_Donor += nNodes;
               }
             }
           }
         }
         else {
           /*--- in 2D we use the edges ---*/
-          nNodes=2;
+          nNodes = 2;
           nFaces = donor_geometry->node[iPointDonor]->GetnPoint();
           for (iFace=0; iFace<nFaces; iFace++) {
-            face_on_marker=true;
+            face_on_marker = true;
             for (iDonor=0; iDonor<nNodes; iDonor++) {
-              inode = donor_geometry->node[iPointDonor]->GetEdge(iFace);
+              inode  = donor_geometry->node[iPointDonor]->GetEdge(iFace);
               jPoint = donor_geometry->edge[inode]->GetNode(iDonor);
+
               face_on_marker = (face_on_marker && (donor_geometry->node[jPoint]->GetVertex(markDonor) !=-1));
             }
             if (face_on_marker ) {
               nLocalFace_Donor++;
-              nLocalFaceNodes_Donor+=nNodes;
+              nLocalFaceNodes_Donor += nNodes;
             }
           }
         }
@@ -169,17 +172,18 @@ void CInterpolator::Determine_ArraySize(bool faces, int markDonor, int markTarge
 #ifdef HAVE_MPI
   SU2_MPI::Allreduce(&nLocalVertex_Donor, &MaxLocalVertex_Donor, 1, MPI_UNSIGNED_LONG, MPI_MAX, MPI_COMM_WORLD);
   SU2_MPI::Allgather(Buffer_Send_nVertex_Donor, 1, MPI_UNSIGNED_LONG, Buffer_Receive_nVertex_Donor, 1, MPI_UNSIGNED_LONG, MPI_COMM_WORLD);
-  if (faces) {
-    SU2_MPI::Allreduce(&nLocalFace_Donor, &nGlobalFace_Donor, 1, MPI_UNSIGNED_LONG, MPI_SUM, MPI_COMM_WORLD);
-    SU2_MPI::Allreduce(&nLocalFace_Donor, &MaxFace_Donor, 1, MPI_UNSIGNED_LONG, MPI_MAX, MPI_COMM_WORLD);
+
+  if (faces){
+    SU2_MPI::Allreduce(&nLocalFace_Donor,      &nGlobalFace_Donor,      1, MPI_UNSIGNED_LONG, MPI_SUM, MPI_COMM_WORLD);
+    SU2_MPI::Allreduce(&nLocalFace_Donor,      &MaxFace_Donor,          1, MPI_UNSIGNED_LONG, MPI_MAX, MPI_COMM_WORLD);
     SU2_MPI::Allreduce(&nLocalFaceNodes_Donor, &nGlobalFaceNodes_Donor, 1, MPI_UNSIGNED_LONG, MPI_SUM, MPI_COMM_WORLD);
-    SU2_MPI::Allreduce(&nLocalFaceNodes_Donor, &MaxFaceNodes_Donor, 1, MPI_UNSIGNED_LONG, MPI_MAX, MPI_COMM_WORLD);
+    SU2_MPI::Allreduce(&nLocalFaceNodes_Donor, &MaxFaceNodes_Donor,     1, MPI_UNSIGNED_LONG, MPI_MAX, MPI_COMM_WORLD);
     SU2_MPI::Allgather(Buffer_Send_nFace_Donor, 1, MPI_UNSIGNED_LONG, Buffer_Receive_nFace_Donor, 1, MPI_UNSIGNED_LONG, MPI_COMM_WORLD);
     SU2_MPI::Allgather(Buffer_Send_nFaceNodes_Donor, 1, MPI_UNSIGNED_LONG, Buffer_Receive_nFaceNodes_Donor, 1, MPI_UNSIGNED_LONG, MPI_COMM_WORLD);
     MaxFace_Donor++;
   }
 #else
-  MaxLocalVertex_Donor    = nLocalVertex_Donor;
+  MaxLocalVertex_Donor = nLocalVertex_Donor;
   Buffer_Receive_nVertex_Donor[0] = Buffer_Send_nVertex_Donor[0];
   if (faces) {
     nGlobalFace_Donor       = nLocalFace_Donor;
@@ -265,8 +269,8 @@ int CInterpolator::Find_InterfaceMarker(CConfig *config, unsigned short val_mark
 
   for (iMarker = 0; iMarker < nMarker; iMarker++) {
 
-    /*--- If the tag GetMarker_All_FSIinterface(iMarker) equals the index we are looping at ---*/
-    if (config->GetMarker_All_FSIinterface(iMarker) == val_marker_interface ) {
+    /*--- If the tag GetMarker_All_ZoneInterface(iMarker) equals the index we are looping at ---*/
+    if (config->GetMarker_All_ZoneInterface(iMarker) == val_marker_interface ) {
 
       /*--- We have identified the identifier for the interface marker ---*/
       return iMarker;
@@ -284,7 +288,6 @@ CNearestNeighbor::CNearestNeighbor(CGeometry ***geometry_container, CConfig **co
 
   /*--- Initialize transfer coefficients between the zones ---*/
   Set_TransferCoeff(config);
-
 }
 
 CNearestNeighbor::~CNearestNeighbor() {}
@@ -320,7 +323,7 @@ void CNearestNeighbor::Set_TransferCoeff(CConfig **config) {
 
   /*--- Initialize variables --- */
   
-  nMarkerInt = (int) ( config[donorZone]->GetMarker_n_FSIinterface() / 2 );
+  nMarkerInt = (int) ( config[donorZone]->GetMarker_n_ZoneInterface() / 2 );
   
   nDim = donor_geometry->GetnDim();
 
@@ -629,7 +632,6 @@ void CNearestNeighbor::Set_TransferCoeff(CConfig **config) {
 }
 
 
-
 CIsoparametric::CIsoparametric(CGeometry ***geometry_container, CConfig **config, unsigned int iZone, unsigned int jZone)  :  CInterpolator(geometry_container, config, iZone, jZone) {
 
   /*--- Initialize transfer coefficients between the zones ---*/
@@ -667,9 +669,7 @@ void CIsoparametric::Set_TransferCoeff(CConfig **config) {
   unsigned long jGlobalPoint = 0;
   int iProcessor;
 
-  unsigned long nLocalFace_Donor = 0, nLocalFaceNodes_Donor=0;
-
-  unsigned long faceindex;
+  unsigned long nLocalFace_Donor = 0, nLocalFaceNodes_Donor=0, faceindex;
 
   su2double dist = 0.0, mindist=1E6, *Coord, *Coord_i;
   su2double myCoeff[10]; // Maximum # of donor points
@@ -687,7 +687,7 @@ void CIsoparametric::Set_TransferCoeff(CConfig **config) {
 
 #ifdef HAVE_MPI
 
-  int *Buffer_Recv_mark=NULL, iRank;
+  int *Buffer_Recv_mark = NULL, iRank;
   
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &nProcessor);
@@ -701,8 +701,7 @@ void CIsoparametric::Set_TransferCoeff(CConfig **config) {
 
 #endif
 
-  /*--- Number of markers on the FSI interface ---*/
-  nMarkerInt = (config[donorZone]->GetMarker_n_FSIinterface())/2;
+  nMarkerInt = (config[donorZone]->GetMarker_n_ZoneInterface())/2;
 
   /*--- For the number of markers on the interface... ---*/
   for (iMarkerInt=1; iMarkerInt <= nMarkerInt; iMarkerInt++) {
@@ -796,8 +795,8 @@ void CIsoparametric::Set_TransferCoeff(CConfig **config) {
     Buffer_Receive_FaceNodes = new unsigned long[MaxFaceNodes_Donor*nProcessor];
     Buffer_Receive_FaceProc  = new unsigned long[MaxFaceNodes_Donor*nProcessor];
 
-    nLocalFace_Donor=0;
-    nLocalFaceNodes_Donor=0;
+    nLocalFace_Donor      = 0;
+    nLocalFaceNodes_Donor = 0;
 
     /*--- Collect Face info ---*/
 
@@ -893,10 +892,10 @@ void CIsoparametric::Set_TransferCoeff(CConfig **config) {
     //Buffer_Send_FaceIndex[nLocalFace_Donor+1] = MaxFaceNodes_Donor*rank+nLocalFaceNodes_Donor;
 #ifdef HAVE_MPI
     SU2_MPI::Allgather(Buffer_Send_FaceNodes, MaxFaceNodes_Donor, MPI_UNSIGNED_LONG, Buffer_Receive_FaceNodes, MaxFaceNodes_Donor, MPI_UNSIGNED_LONG, MPI_COMM_WORLD);
-    SU2_MPI::Allgather(Buffer_Send_FaceProc, MaxFaceNodes_Donor, MPI_UNSIGNED_LONG, Buffer_Receive_FaceProc, MaxFaceNodes_Donor, MPI_UNSIGNED_LONG, MPI_COMM_WORLD);
-    SU2_MPI::Allgather(Buffer_Send_FaceIndex, MaxFace_Donor, MPI_UNSIGNED_LONG, Buffer_Receive_FaceIndex, MaxFace_Donor, MPI_UNSIGNED_LONG, MPI_COMM_WORLD);
+    SU2_MPI::Allgather(Buffer_Send_FaceProc,  MaxFaceNodes_Donor, MPI_UNSIGNED_LONG, Buffer_Receive_FaceProc,  MaxFaceNodes_Donor, MPI_UNSIGNED_LONG, MPI_COMM_WORLD);
+    SU2_MPI::Allgather(Buffer_Send_FaceIndex, MaxFace_Donor,      MPI_UNSIGNED_LONG, Buffer_Receive_FaceIndex, MaxFace_Donor,      MPI_UNSIGNED_LONG, MPI_COMM_WORLD);
 #else
-    for (iFace=0; iFace<MaxFace_Donor; iFace++) {
+    for (iFace = 0; iFace < MaxFace_Donor; iFace++){
       Buffer_Receive_FaceIndex[iFace] = Buffer_Send_FaceIndex[iFace];
     }
     for (iVertex = 0; iVertex < MaxFaceNodes_Donor; iVertex++)
@@ -906,10 +905,10 @@ void CIsoparametric::Set_TransferCoeff(CConfig **config) {
 #endif
 
     /*--- Loop over the vertices on the target Marker ---*/
-    for (iVertex = 0; iVertex<nVertexTarget; iVertex++) {
+    for (iVertex = 0; iVertex < nVertexTarget; iVertex++) {
       mindist=1E6;
-      for (unsigned short iCoeff=0; iCoeff<10; iCoeff++) {
-    storeCoeff[iCoeff]=0;
+      for (unsigned short iCoeff = 0; iCoeff < 10; iCoeff++){
+        storeCoeff[iCoeff] = 0;
       }
       Point_Target = target_geometry->vertex[markTarget][iVertex]->GetNode();
 
@@ -1035,7 +1034,7 @@ void CIsoparametric::Set_TransferCoeff(CConfig **config) {
   delete [] projected_point;
 
   #ifdef HAVE_MPI
-  if (rank == MASTER_NODE) 
+  if (rank == MASTER_NODE && Buffer_Recv_mark != NULL) 
     delete [] Buffer_Recv_mark;
   #endif
 }
@@ -1269,7 +1268,7 @@ void CMirror::Set_TransferCoeff(CConfig **config) {
   int nProcessor = SINGLE_NODE;
 
 #ifdef HAVE_MPI
-  int *Buffer_Recv_mark=NULL, iRank;
+  int *Buffer_Recv_mark = NULL, iRank;
   
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &nProcessor);
@@ -1287,7 +1286,7 @@ void CMirror::Set_TransferCoeff(CConfig **config) {
   su2double coeff;
 
   /*--- Number of markers on the interface ---*/
-  nMarkerInt = (config[targetZone]->GetMarker_n_FSIinterface())/2;
+  nMarkerInt = (config[targetZone]->GetMarker_n_ZoneInterface())/2;
 
   /*--- For the number of markers on the interface... ---*/
   for (iMarkerInt=1; iMarkerInt <= nMarkerInt; iMarkerInt++) {
@@ -1513,7 +1512,8 @@ void CMirror::Set_TransferCoeff(CConfig **config) {
   }
 
   #ifdef HAVE_MPI
-  if (rank == MASTER_NODE) 
+  if (rank == MASTER_NODE && Buffer_Recv_mark != NULL) 
     delete [] Buffer_Recv_mark;
   #endif
 }
+
