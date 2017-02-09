@@ -107,7 +107,7 @@ void CIteration::SetGrid_Movement(CGeometry ***geometry_container,
          rotating reference frame. ---*/
 
         for (iMGlevel = 0; iMGlevel <= nMGlevels; iMGlevel++)
-          geometry_container[val_iZone][iMGlevel]->SetRotationalVelocity(config_container[val_iZone], val_iZone);
+          geometry_container[val_iZone][iMGlevel]->SetRotationalVelocity(config_container[ZONE_0], ZONE_0);
 
       }
 

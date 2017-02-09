@@ -300,8 +300,8 @@ CDriver::CDriver(char* confFile,
       FFDBox[iZone] = new CFreeFormDefBox*[MAX_NUMBER_FFD];
       surface_movement[iZone] = new CSurfaceMovement();
       surface_movement[iZone]->CopyBoundary(geometry_container[iZone][MESH_0], config_container[iZone]);
-//      if (config_container[iZone]->GetUnsteady_Simulation() == SPECTRAL_METHOD)
-//        iteration_container[iZone]->SetGrid_Movement(geometry_container, surface_movement, grid_movement, FFDBox, solver_container, config_container, iZone, 0, 0);
+      if (config_container[iZone]->GetUnsteady_Simulation() == SPECTRAL_METHOD)
+        iteration_container[iZone]->SetGrid_Movement(geometry_container, surface_movement, grid_movement, FFDBox, solver_container, config_container, iZone, 0, 0);
     }
 
     if (config_container[iZone]->GetDirectDiff() == D_DESIGN){
@@ -4219,7 +4219,7 @@ void CSpectralDriver::SetTimeSpectral_Velocities() {
 void CSpectralDriver::SetGeoTurboAvgValues(unsigned short iZone, bool allocate){
 
 	if ((config_container[iZone]->GetGrid_Movement())){
-					geometry_container[iZone][MESH_0]->SetRotationalVelocity(config_container[iZone], iZone);
+					geometry_container[iZone][MESH_0]->SetRotationalVelocity(config_container[ZONE_0], ZONE_0);
 	}
 	geometry_container[iZone][MESH_0]->SetAvgTurboValue(config_container[iZone], iZone, INFLOW, allocate);
 	geometry_container[iZone][MESH_0]->SetAvgTurboValue(config_container[iZone],iZone, OUTFLOW, allocate);

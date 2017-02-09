@@ -8540,8 +8540,8 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
   invP_Tensor = new su2double*[nVar];
   for (iVar = 0; iVar < nVar; iVar++)
   {
-  	P_Tensor[iVar] = new su2double[nVar];
-  	invP_Tensor[iVar] = new su2double[nVar];
+    P_Tensor[iVar] = new su2double[nVar];
+    invP_Tensor[iVar] = new su2double[nVar];
   }
 
   /*--- TO BE GENERALIZED FOR RADIAL TURBOMACHINERY 3D ---*/
@@ -8632,9 +8632,10 @@ void CEulerSolver::BC_NonUniform(CGeometry *geometry, CSolver **solver_container
 
         /*--- HARDCODED FOR TEST ONLY!! ---*/
         //        	Period  = 0.0048429906542056074;
-        Period  = 0.0049065420560747662;
+        Period  = 0.00083056623197921111;
         Period /= config->GetTime_Ref();
-        Boundary_Vel  = 21.4;
+        Boundary_Vel  = 1990.00;
+//        Boundary_Vel  = .00;
         Boundary_Vel /= config->GetVelocity_Ref();
         ThetaPitch = 9.47/180*PI_NUMBER;
         Theta0 = NonUniformBC_InputVar1[0];
