@@ -8008,7 +8008,7 @@ void CEulerSolver::BC_Riemann(CGeometry *geometry, CSolver **solver_container,
         Flow_Dir = config->GetRiemann_FlowDir(Marker_Tag);
 
         //				P_Total  = config->GetRiemann_Var1(Marker_Tag)*( 1+0.004*sin(1422.85889495918677459237*Physical_t)+0.004*(sin(3841.7190163898042913994*Physical_t)));
-        //				P_Total  = config->GetRiemann_Var1(Marker_Tag)*( 1+0.09*sin(config->GetOmega_HB()[1]*Physical_t));
+        P_Total  = config->GetRiemann_Var1(Marker_Tag)*( 1+0.09*sin(config->GetOmega_HB()[1]/config->GetOmega_Ref()*Physical_t));
 
         /*--- Non-dim. the inputs if necessary. ---*/
         P_Total /= config->GetPressure_Ref();

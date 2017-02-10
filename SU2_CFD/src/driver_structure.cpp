@@ -2978,14 +2978,18 @@ void CSingleZoneDriver::Run() {
 
 	unsigned long ExtIter = config_container[ZONE_0]->GetExtIter();
 
-	/*--- set-rotating frame and geometric average quantities for Turbomachinery computation ---*/
-	if(config_container[ZONE_0]->GetBoolTurbomachinery()){
-		if(ExtIter == 0){
-			SetGeoTurboAvgValues(ZONE_0, true);
-		}
-		solver_container[ZONE_0][MESH_0][FLOW_SOL]->TurboMixingProcess(geometry_container[ZONE_0][MESH_0],config_container[ZONE_0],INFLOW);
-		solver_container[ZONE_0][MESH_0][FLOW_SOL]->TurboMixingProcess(geometry_container[ZONE_0][MESH_0],config_container[ZONE_0],OUTFLOW);
-	}
+/*--- set-rotating frame and geometric average quantities for Turbomachinery computation ---*/
+if(config_container[ZONE_0]->GetBoolTurbomachinery()){
+  if(config_container[ZONE_0]->GetRestart()){
+    if(ExtIter == config_container[ZONE_0]->GetUnst_RestartIter())
+      SetGeoTurboAvgValues(ZONE_0, true);
+  }
+  if(ExtIter == 0){
+    SetGeoTurboAvgValues(ZONE_0, true);
+  }
+  solver_container[ZONE_0][MESH_0][FLOW_SOL]->TurboMixingProcess(geometry_container[ZONE_0][MESH_0],config_container[ZONE_0],INFLOW);
+  solver_container[ZONE_0][MESH_0][FLOW_SOL]->TurboMixingProcess(geometry_container[ZONE_0][MESH_0],config_container[ZONE_0],OUTFLOW);
+}
 
 
   /*--- Run an iteration of the physics within this single zone.
