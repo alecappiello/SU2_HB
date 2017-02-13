@@ -5238,7 +5238,8 @@ void CEulerSolver::TurboPerformance(CConfig *config, CGeometry *geometry){
     TotalEnthalpyOutIs[markerTP -1]		=	avgTotalEnthalpyOutIs;
     EntropyIn[markerTP -1]				 		= avgEntropyIn;
     EntropyOut[markerTP -1]				 		= avgEntropyOut;
-    EntropyGen[markerTP -1]           = (avgEntropyOut - avgEntropyIn)/abs(avgEntropyIn + 1.0);
+//    EntropyGen[markerTP -1]           = (avgEntropyOut - avgEntropyIn)/abs(avgEntropyIn + 1.0);
+    EntropyGen[markerTP -1]           = avgEntropyOut - avgEntropyIn;
     AbsFlowAngleIn[markerTP -1]       = absFlowAngleIn;
     AbsFlowAngleOut[markerTP -1]      = absFlowAngleOut;
     FlowAngleIn[markerTP -1]       		= flowAngleIn;
