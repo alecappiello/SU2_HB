@@ -270,12 +270,14 @@ void COutput::SetTecplotASCII(CConfig *config, CGeometry *geometry, CSolver **so
   /*--- Write the header ---*/
   Tecplot_File << "ZONE ";
   if (config->GetUnsteady_Simulation() && config->GetWrt_Unsteady()) {
-    Tecplot_File << "STRANDID="<<SU2_TYPE::Int(iExtIter+1)<<", SOLUTIONTIME="<<config->GetDelta_UnstTime()*iExtIter<<", ";
+//    Tecplot_File << "STRANDID="<<SU2_TYPE::Int(iExtIter+1)<<", SOLUTIONTIME="<<config->GetDelta_UnstTime()*iExtIter<<", ";
+    Tecplot_File << "STRANDID="<<SU2_TYPE::Int(1)<<", SOLUTIONTIME="<<config->GetDelta_UnstTime()*iExtIter<<", ";
   } else if (config->GetUnsteady_Simulation() == SPECTRAL_METHOD) {
     /*--- Compute period of oscillation & compute time interval using nTimeInstances ---*/
     su2double period = config->GetSpectralMethod_Period();
     su2double deltaT = period/(su2double)(config->GetnTimeInstances());
-    Tecplot_File << "STRANDID="<<SU2_TYPE::Int(val_iZone+1)<<", SOLUTIONTIME="<<deltaT*val_iZone<<", ";
+    Tecplot_File << "STRANDID="<<SU2_TYPE::Int(1)<<", SOLUTIONTIME="<<deltaT*val_iZone<<", ";
+//    Tecplot_File << "STRANDID="<<SU2_TYPE::Int(val_iZone+1)<<", SOLUTIONTIME="<<deltaT*val_iZone<<", ";
   }
   
   if (nDim == 2) {
