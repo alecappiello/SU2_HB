@@ -4045,16 +4045,26 @@ void CSpectralDriver::ComputeHarmonicBalance_Operator(su2double **D, su2double *
     su2double *E_Re     = new su2double[nZone*nZone];
     su2double *E_Im     = new su2double[nZone*nZone];
     su2double *D_diag   = new su2double[nZone*nZone];
+    su2double Tinst[5] = { 0.0048048348739570266, 0.0075080003519909979, 0.011155580998268419, 0.013723163720650137, 0.0163551401869158868};
     
+
+//    for (iVar = 0; iVar < nZone; iVar++) {
+//        for (jVar = 0; jVar < nZone; jVar++) {
+//            E_Re[iVar*nZone+jVar] = cos(Omega_HB[jVar]*(Tinst[iVar]));
+//            E_Im[iVar*nZone+jVar] = sin(Omega_HB[jVar]*(Tinst[iVar]));
+//            D_diag[iVar*nZone+jVar] = 0.;
+//        }
+//        D_diag[iVar*nZone+iVar] = Omega_HB[iVar];
+//    }
+
     for (iVar = 0; iVar < nZone; iVar++) {
-        for (jVar = 0; jVar < nZone; jVar++) {
-            E_Re[iVar*nZone+jVar] = cos(Omega_HB[jVar]*(iVar*period/nZone));
-            E_Im[iVar*nZone+jVar] = sin(Omega_HB[jVar]*(iVar*period/nZone));
-            D_diag[iVar*nZone+jVar] = 0.;
-        }
-        D_diag[iVar*nZone+iVar] = Omega_HB[iVar];
+      for (jVar = 0; jVar < nZone; jVar++) {
+        E_Re[iVar*nZone+jVar] = cos(Omega_HB[jVar]*(iVar*period/nZone));
+        E_Im[iVar*nZone+jVar] = sin(Omega_HB[jVar]*(iVar*period/nZone));
+        D_diag[iVar*nZone+jVar] = 0.;
+      }
+      D_diag[iVar*nZone+iVar] = Omega_HB[iVar];
     }
-    
     
     /*---- Finding inverse of matrix E = E_Re + 1i*E_Im -----*/
     su2double *L = new su2double[(2*nZone)*(2*nZone)];

@@ -8008,8 +8008,8 @@ void CEulerSolver::BC_Riemann(CGeometry *geometry, CSolver **solver_container,
         T_Total  = config->GetRiemann_Var2(Marker_Tag);
         Flow_Dir = config->GetRiemann_FlowDir(Marker_Tag);
 
-        //				P_Total  = config->GetRiemann_Var1(Marker_Tag)*( 1+0.004*sin(1422.85889495918677459237*Physical_t)+0.004*(sin(3841.7190163898042913994*Physical_t)));
-        P_Total  = config->GetRiemann_Var1(Marker_Tag)*( 1+0.09*sin(config->GetOmega_HB()[1]/config->GetOmega_Ref()*Physical_t));
+        P_Total  = config->GetRiemann_Var1(Marker_Tag)*( 1+0.004*sin(1422.85889495918677459237e-3*Physical_t)+0.004*(sin(3841.7190163898042913994e-3*Physical_t)));
+//        P_Total = config->GetRiemann_Var1(Marker_Tag)*( 1+0.09*sin(config->GetOmega_HB()[1]/config->GetOmega_Ref()*Physical_t));
 
         /*--- Non-dim. the inputs if necessary. ---*/
         P_Total /= config->GetPressure_Ref();
@@ -11465,7 +11465,7 @@ for (iVertex = 0; iVertex < geometry->nVertex[val_marker]; iVertex++) {
     V_domain = node[iPoint]->GetPrimitive();
 
     /*--- Build the fictitious intlet state based on characteristics ---*/
-
+    su2double Tinst[5] = { 0.0048048348739570266, 0.0075080003519909979, 0.011155580998268419, 0.013723163720650137, 0.0163551401869158868 };
     if (compressible) {
 
       /*--- Subsonic inflow: there is one outgoing characteristic (u-c),
@@ -11480,11 +11480,11 @@ for (iVertex = 0; iVertex < geometry->nVertex[val_marker]; iVertex++) {
       /*--- Total properties have been specified at the inlet. ---*/
 
       case TOTAL_CONDITIONS:
-
         if (spectral_method) {
           /*--- time interval using nTimeInstances ---*/
           Physical_dt = (su2double)config->GetSpectralMethod_Period()/(su2double)(config->GetnTimeInstances());
           Physical_t  = config->GetiZone()*Physical_dt;
+//          Physical_t = Tinst[config->GetiZone()];
         }
         else {
           Physical_dt = (su2double)config->GetDelta_UnstTime();
