@@ -34,7 +34,8 @@
 #include "../include/solver_structure.hpp"
 
 CTurbSolver::CTurbSolver(void) : CSolver() {
-  
+  nMarker = 0;
+  nVertex = NULL;
   FlowPrimVar_i = NULL;
   FlowPrimVar_j = NULL;
   lowerlimit    = NULL;
@@ -46,13 +47,22 @@ CTurbSolver::CTurbSolver(void) : CSolver() {
 
 }
 
-CTurbSolver::CTurbSolver(CConfig *config) : CSolver() {
+CTurbSolver::CTurbSolver(CConfig *config, CGeometry *geometry) : CSolver() {
   
+  unsigned long iMarker;
   Gamma = config->GetGamma();
   Gamma_Minus_One = Gamma - 1.0;
 
   nPrimVar = 2;
   
+  nMarker      = config->GetnMarker_All();
+
+  /*--- Store the number of vertices on each marker for deallocation later ---*/
+
+  nVertex = new unsigned long[nMarker];
+  for (iMarker = 0; iMarker < nMarker; iMarker++)
+    nVertex[iMarker] = geometry->nVertex[iMarker];
+
   FlowPrimVar_i = NULL;
   FlowPrimVar_j = NULL;
   lowerlimit    = NULL;
@@ -62,11 +72,30 @@ CTurbSolver::CTurbSolver(CConfig *config) : CSolver() {
 
 CTurbSolver::~CTurbSolver(void) {
   
+  unsigned long iMarker, iVertex;
+  unsigned short iVar;
+
   if (FlowPrimVar_i != NULL) delete [] FlowPrimVar_i;
   if (FlowPrimVar_j != NULL) delete [] FlowPrimVar_j;
   if (lowerlimit != NULL) delete [] lowerlimit;
   if (upperlimit != NULL) delete [] upperlimit;
   
+  if ( SlidingState != NULL ) {
+      for (iMarker = 0; iMarker < nMarker; iMarker++) {
+        if ( SlidingState[iMarker] != NULL ) {
+          for (iVertex = 0; iVertex < nVertex[iMarker]; iVertex++)
+            if ( SlidingState[iMarker][iVertex] != NULL ){
+              for (iVar = 0; iVar < nPrimVar+1; iVar++)
+                delete [] SlidingState[iMarker][iVertex][iVar];
+              delete [] SlidingState[iMarker][iVertex];
+            }
+          delete [] SlidingState[iMarker];
+        }
+      }
+      delete [] SlidingState;
+    }
+  if (nVertex != NULL) delete [] nVertex;
+
 }
 
 void CTurbSolver::Set_MPI_Solution(CGeometry *geometry, CConfig *config) {
@@ -1451,7 +1480,6 @@ CTurbSASolver::CTurbSASolver(CGeometry *geometry, CConfig *config, unsigned shor
 }
 
 CTurbSASolver::~CTurbSASolver(void) {
-  
 }
 
 void CTurbSASolver::Preprocessing(CGeometry *geometry, CSolver **solver_container, CConfig *config, unsigned short iMesh, unsigned short iRKStep, unsigned short RunTime_EqSystem, bool Output) {

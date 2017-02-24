@@ -8145,6 +8145,8 @@ protected:
   *upperlimit;            /*!< \brief contains upper limits for turbulence variables. */
   su2double Gamma;           /*!< \brief Fluid's Gamma constant (ratio of specific heats). */
   su2double Gamma_Minus_One; /*!< \brief Fluids's Gamma - 1.0  . */
+  unsigned long nMarker,
+  *nVertex;
   
 public:
   
@@ -8161,7 +8163,7 @@ public:
   /*!
    * \brief Constructor of the class.
    */
-  CTurbSolver(CConfig *config);
+  CTurbSolver(CConfig *config, CGeometry *geometry);
   
   /*!
    * \brief Impose the send-receive boundary condition.
