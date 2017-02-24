@@ -41,6 +41,9 @@ CTurbSolver::CTurbSolver(void) : CSolver() {
   upperlimit    = NULL;
   
   nPrimVar = 2;
+
+
+
 }
 
 CTurbSolver::CTurbSolver(CConfig *config) : CSolver() {
@@ -1419,7 +1422,32 @@ CTurbSASolver::CTurbSASolver(CGeometry *geometry, CConfig *config, unsigned shor
   
   /*--- MPI solution ---*/
   Set_MPI_Solution(geometry, config);
+  unsigned long iMarker,  nMarker = config->GetnMarker_Fluid_InterfaceBound();
+
+    /*--- Initializate quantities for SlidingMesh Interface ---*/
   
+  SlidingState       = new su2double*** [nMarker];
+  SlidingStateNodes  = new int*         [nMarker];
+
+  for (iMarker = 0; iMarker < nMarker; iMarker++){
+    SlidingState[iMarker]      = NULL;
+    SlidingStateNodes[iMarker] = NULL;
+
+    if (config->GetMarker_All_KindBC(iMarker) == FLUID_INTERFACE){
+
+      SlidingState[iMarker]       = new su2double**[geometry->GetnVertex(iMarker)];
+      SlidingStateNodes[iMarker]  = new int        [geometry->GetnVertex(iMarker)];
+
+      for (iPoint = 0; iPoint < geometry->GetnVertex(iMarker); iPoint++){
+        SlidingState[iMarker][iPoint] = new su2double*[nPrimVar+1];
+
+        SlidingStateNodes[iMarker][iPoint] = 0;
+        for (iVar = 0; iVar < nPrimVar+1; iVar++)
+          SlidingState[iMarker][iPoint][iVar] = NULL;
+      }
+
+    }
+  }
 }
 
 CTurbSASolver::~CTurbSASolver(void) {

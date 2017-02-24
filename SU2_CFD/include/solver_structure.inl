@@ -1886,23 +1886,45 @@ inline void CEulerSolver::SetSlidingState(unsigned short val_marker, unsigned lo
   SlidingState[val_marker][val_vertex][val_state][donor_index] = component; 
 }
 
+inline void CTurbSolver::SetSlidingState(unsigned short val_marker, unsigned long val_vertex, unsigned short val_state, unsigned long donor_index, su2double component){
+  SlidingState[val_marker][val_vertex][val_state][donor_index] = component;
+}
+
 inline void CSolver::SetSlidingState(unsigned short val_marker, unsigned long val_vertex, unsigned short val_state, unsigned long donor_index, su2double component){ }
 
 inline su2double CEulerSolver::GetSlidingState(unsigned short val_marker, unsigned long val_vertex, unsigned short val_state, unsigned long donor_index) { return SlidingState[val_marker][val_vertex][val_state][donor_index]; }
+
+inline su2double CTurbSolver::GetSlidingState(unsigned short val_marker, unsigned long val_vertex, unsigned short val_state, unsigned long donor_index) { return SlidingState[val_marker][val_vertex][val_state][donor_index]; }
 
 inline su2double CSolver::GetSlidingState(unsigned short val_marker, unsigned long val_vertex, unsigned short val_state, unsigned long donor_index) { return 0; }
 
 inline int CEulerSolver::GetnSlidingStates(unsigned short val_marker, unsigned long val_vertex){ return SlidingStateNodes[val_marker][val_vertex]; }
 
+inline int CTurbSolver::GetnSlidingStates(unsigned short val_marker, unsigned long val_vertex){ return SlidingStateNodes[val_marker][val_vertex]; }
+
 inline int CSolver::GetnSlidingStates(unsigned short val_marker, unsigned long val_vertex){ return 0; }
 
 inline void CEulerSolver::SetnSlidingStates(unsigned short val_marker, unsigned long val_vertex, int value){ SlidingStateNodes[val_marker][val_vertex] = value; }
+
+inline void CTurbSolver::SetnSlidingStates(unsigned short val_marker, unsigned long val_vertex, int value){ SlidingStateNodes[val_marker][val_vertex] = value; }
 
 inline void CSolver::SetnSlidingStates(unsigned short val_marker, unsigned long val_vertex, int value){}
 
 inline void CSolver::SetSlidingStateStructure(unsigned short val_marker, unsigned long val_vertex){}
 
 inline void CEulerSolver::SetSlidingStateStructure(unsigned short val_marker, unsigned long val_vertex){	
+  int iVar;
+
+  for( iVar = 0; iVar < nPrimVar+1; iVar++){
+    if( SlidingState[val_marker][val_vertex][iVar] != NULL )
+      delete [] SlidingState[val_marker][val_vertex][iVar];
+  }
+
+  for( iVar = 0; iVar < nPrimVar+1; iVar++)
+    SlidingState[val_marker][val_vertex][iVar] = new su2double[ GetnSlidingStates(val_marker, val_vertex) ];
+}
+
+inline void CTurbSolver::SetSlidingStateStructure(unsigned short val_marker, unsigned long val_vertex){
   int iVar;
 
   for( iVar = 0; iVar < nPrimVar+1; iVar++){
