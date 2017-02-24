@@ -486,9 +486,11 @@ void CNearestNeighbor::Set_TransferCoeff(CConfig **config) {
               Coord_j[iDim] = Buffer_Receive_Coord[ Global_Point_Donor*nDim+iDim];
               if ( iDim == pDir && Coord_i[iDim] > CoordGlobal_j_max   ){
                 dist += pow(Coord_j[iDim] - (Coord_i[iDim] - 0.105),2.0);
+//                dist += pow(Coord_j[iDim] - (Coord_i[iDim] - 0.04463756775),2.0);
               }
               else if ( iDim == pDir && Coord_i[iDim] <=  CoordGlobal_j_min  ){
                 dist += pow(Coord_j[iDim] - (Coord_i[iDim] + 0.105),2.0);
+//                dist += pow(Coord_j[iDim] - (Coord_i[iDim] + 0.04463756775),2.0);
               }
               else
                 dist += pow(Coord_j[iDim] - (Coord_i[iDim]),2.0);

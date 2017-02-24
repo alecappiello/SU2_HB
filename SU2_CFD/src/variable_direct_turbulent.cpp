@@ -69,7 +69,7 @@ CTurbVariable::CTurbVariable(unsigned short val_nDim, unsigned short val_nvar, C
     Solution_Max[iVar] = 0.0;
     Solution_Min[iVar] = 0.0;
   }
-  
+
 }
 
 CTurbVariable::~CTurbVariable(void) { }

@@ -766,7 +766,6 @@ void CDriver::Solver_Preprocessing(CSolver ***solver_container, CGeometry **geom
     if (ns) {
       if (compressible) {
         solver_container[iMGlevel][FLOW_SOL] = new CNSSolver(geometry[iMGlevel], config, iMGlevel);
-        solver_container[iMGlevel][FLOW_SOL]->Preprocessing(geometry[iMGlevel], solver_container[iMGlevel], config, iMGlevel, NO_RK_ITER, RUNTIME_FLOW_SYS, false);
       }
       if (incompressible) {
         solver_container[iMGlevel][FLOW_SOL] = new CIncNSSolver(geometry[iMGlevel], config, iMGlevel);
@@ -3403,7 +3402,7 @@ void CFluidDriver::Transfer_Data(unsigned short donorZone, unsigned short target
       transfer_container[donorZone][targetZone]->Scatter_InterfaceData(solver_container[donorZone][MESH_0][FLOW_SOL],solver_container[targetZone][MESH_0][FLOW_SOL],
           geometry_container[donorZone][MESH_0],geometry_container[targetZone][MESH_0],
           config_container[donorZone], config_container[targetZone]);
-      /*--- Set the volume deformation for the fluid zone ---*/
+       /*--- Set the volume deformation for the fluid zone ---*/
       //      grid_movement[targetZone]->SetVolume_Deformation(geometry_container[targetZone][MESH_0], config_container[targetZone], true);
     }
     else {
@@ -4004,8 +4003,12 @@ MPI_Comm_rank(MPI_COMM_WORLD, &rank);
       }
       else {
         transfer_container[donorZone][targetZone]->Broadcast_InterfaceData_Interpolate(solver_container[donorZone][MESH_0][FLOW_SOL],solver_container[targetZone][MESH_0][FLOW_SOL],
-        geometry_container[donorZone][MESH_0],geometry_container[targetZone][MESH_0],
-        config_container[donorZone], config_container[targetZone]);
+            geometry_container[donorZone][MESH_0],geometry_container[targetZone][MESH_0],
+            config_container[donorZone], config_container[targetZone]);
+        if (config_container[targetZone]->GetKind_Solver() == RANS)
+          transfer_container[donorZone][targetZone]->Broadcast_InterfaceData_Interpolate(solver_container[donorZone][MESH_0][TURB_SOL],solver_container[targetZone][MESH_0][TURB_SOL],
+              geometry_container[donorZone][MESH_0],geometry_container[targetZone][MESH_0],
+              config_container[donorZone], config_container[targetZone]);
         /*--- Set the volume deformation for the fluid zone ---*/
 //        grid_movement[targetZone]->SetVolume_Deformation(geometry_container[targetZone][MESH_0], config_container[targetZone], true);
       }

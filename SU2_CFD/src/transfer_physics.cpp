@@ -361,17 +361,27 @@ void CTransfer_SlidingInterface::GetDonor_Variable(CSolver *donor_solution, CGeo
                                                 unsigned long Marker_Donor, unsigned long Vertex_Donor, unsigned long Point_Donor) {
 
   unsigned short iVar;
-
+  su2double nVar = donor_solution->GetnPrimVar();
+  bool turbulent = nVar == 2 ;
   /*--- Retrieve solution and set it as the donor variable ---*/
 
-  for (iVar = 0; iVar < nVar; iVar++)
-    Donor_Variable[iVar] = donor_solution->node[Point_Donor]->GetPrimitive(iVar);
+  if (turbulent){
+    Donor_Variable[0] = donor_solution->node[Point_Donor]->GetSolution(0);
+    Donor_Variable[1] = donor_solution->node[Point_Donor]->GetSolution(1);
+
+  } else{
+
+    for (iVar = 0; iVar < nVar; iVar++)
+      Donor_Variable[iVar] = donor_solution->node[Point_Donor]->GetPrimitive(iVar);
+
+  }
 }
 
 void CTransfer_SlidingInterface::SetTarget_Variable(CSolver *target_solution, CGeometry *target_geometry,
                           CConfig *target_config, unsigned long Marker_Target,
                           unsigned long Vertex_Target, unsigned long Point_Target) {
 
+  su2double nVar = target_solution->GetnPrimVar();
   unsigned short iVar, iDonorVertex;
   /*--- Set the Sliding solution with the value of the Target Variable ---*/
 
