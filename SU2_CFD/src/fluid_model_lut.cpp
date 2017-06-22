@@ -385,23 +385,40 @@ CLookUpTable::CLookUpTable(CConfig *config, bool dimensional) :
 	vector<vector<unsigned long> > Boundary_Edges[nZones];
 	vector<vector<unsigned long> > Boundary_Edge_To_Face_Connectivity[nZones];
 	for (int i=0;i<nZones;i++){
+		int boundary_edge_idx = 0;
 		for (int j=0; j<Table_Edge_To_Face_Connectivity[i].size(); j++){
 			if (Table_Edge_To_Face_Connectivity[i][j].size() < 2) {
 				Boundary_Edges[i].push_back(Table_Zone_Edges[i][j]);
 				//All exiting edges are connected to the zone (face 1) and the outside-the-zone face (face 0)
-				Boundary_Edge_To_Face_Connectivity[i].push_back(vector<unsigned long>(0,1));
+				Boundary_Edge_To_Face_Connectivity[i].push_back(vector<unsigned long>(2,0));
+				Boundary_Edge_To_Face_Connectivity[i][boundary_edge_idx][0] = 0;
+				Boundary_Edge_To_Face_Connectivity[i][boundary_edge_idx][1] = 1;
+				boundary_edge_idx++;
 			}
 		}
 		//Append 4 edges to the list for a containing rectangle to be constructed around the map
-		Boundary_Edges[i].push_back(vector<unsigned long> (nTable_Zone_Stations[i]+0, nTable_Zone_Stations[i]+1));
-		Boundary_Edges[i].push_back(vector<unsigned long> (nTable_Zone_Stations[i]+1, nTable_Zone_Stations[i]+2));
-		Boundary_Edges[i].push_back(vector<unsigned long> (nTable_Zone_Stations[i]+2, nTable_Zone_Stations[i]+3));
-		Boundary_Edges[i].push_back(vector<unsigned long> (nTable_Zone_Stations[i]+3, nTable_Zone_Stations[i]+0));
+		Boundary_Edges[i].push_back(vector<unsigned long>(2));
+		Boundary_Edges[i][boundary_edge_idx][0] = nTable_Zone_Stations[i]+0;
+		Boundary_Edges[i][boundary_edge_idx][1] = nTable_Zone_Stations[i]+1;
+		boundary_edge_idx++;
+		Boundary_Edges[i].push_back(vector<unsigned long>(2));
+		Boundary_Edges[i][boundary_edge_idx][0] = nTable_Zone_Stations[i]+1;
+		Boundary_Edges[i][boundary_edge_idx][1] = nTable_Zone_Stations[i]+2;
+		boundary_edge_idx++;
+		Boundary_Edges[i].push_back(vector<unsigned long>(2));
+		Boundary_Edges[i][boundary_edge_idx][0] = nTable_Zone_Stations[i]+2;
+		Boundary_Edges[i][boundary_edge_idx][1] = nTable_Zone_Stations[i]+3;
+		boundary_edge_idx++;
+		Boundary_Edges[i].push_back(vector<unsigned long>(2));
+		Boundary_Edges[i][boundary_edge_idx][0] = nTable_Zone_Stations[i]+3;
+		Boundary_Edges[i][boundary_edge_idx][1] = nTable_Zone_Stations[i]+0;
+		boundary_edge_idx++;
+
 		//These 4 edges are only connected to face 0 (the outside-the-zone face)
-		Boundary_Edge_To_Face_Connectivity[i].push_back(vector<unsigned long>(0));
-		Boundary_Edge_To_Face_Connectivity[i].push_back(vector<unsigned long>(0));
-		Boundary_Edge_To_Face_Connectivity[i].push_back(vector<unsigned long>(0));
-		Boundary_Edge_To_Face_Connectivity[i].push_back(vector<unsigned long>(0));
+		Boundary_Edge_To_Face_Connectivity[i].push_back(vector<unsigned long>(1,0));
+		Boundary_Edge_To_Face_Connectivity[i].push_back(vector<unsigned long>(1,0));
+		Boundary_Edge_To_Face_Connectivity[i].push_back(vector<unsigned long>(1,0));
+		Boundary_Edge_To_Face_Connectivity[i].push_back(vector<unsigned long>(1,0));
 	}
 
 	//Build a trapezoidal map for the boundaries of each zone separately and for each
