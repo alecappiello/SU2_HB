@@ -246,7 +246,7 @@ CLookUpTable::CLookUpTable(CConfig *config, bool dimensional) :
 	LUT_Debug_Mode = false;
 	rank = MASTER_NODE;
 	//TODO this has to be generalize for multi-zone
-	SinglePhaseZone = 1;
+	SinglePhaseZone = 0;
 	CurrentZone= SinglePhaseZone;
 	nInterpPoints = 3;
 	nZones=0;//changes when LUT file reads
