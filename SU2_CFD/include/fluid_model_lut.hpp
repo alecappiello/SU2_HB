@@ -67,7 +67,6 @@ protected:
 	vector<unsigned int> CurrentFace;
 	//The unique values of x which exist in the data
 	vector<su2double> Unique_X_Bands;
-	vector<vector<unsigned long> > Unique_Edges;
 	vector<vector<su2double> > X_Limits_of_Edges, Y_Limits_of_Edges;
 	//The value that each edge which intersects the band takes within that
 	//same band. Used to sort the edges
@@ -88,6 +87,15 @@ public:
 	unsigned int getCurrentFace() const {
 		return CurrentFace[0];
 	}
+
+	vector<unsigned long> getUpperEdgeFaces() const {
+		return Edge_To_Face_Connectivity[UpperEdge];
+	}
+
+	vector<unsigned long> getLowerEdgeFaces() const {
+			return Edge_To_Face_Connectivity[LowerEdge];
+		}
+
 };
 
 #include "../include/fluid_model.hpp"

@@ -380,7 +380,6 @@ CLookUpTable::CLookUpTable(CConfig *config, bool dimensional) :
 	}
 
 	//Create the zone switching trapezoidal maps
-
 	//Find which edges have only a single face connection (those are boundary edges)
 	vector<vector<unsigned long> > Boundary_Edges[nZones];
 	vector<vector<unsigned long> > Boundary_Edge_To_Face_Connectivity[nZones];
@@ -389,10 +388,8 @@ CLookUpTable::CLookUpTable(CConfig *config, bool dimensional) :
 		for (int j=0; j<Table_Edge_To_Face_Connectivity[i].size(); j++){
 			if (Table_Edge_To_Face_Connectivity[i][j].size() < 2) {
 				Boundary_Edges[i].push_back(Table_Zone_Edges[i][j]);
-				//All exiting edges are connected to the zone (face 1) and the outside-the-zone face (face 0)
-				Boundary_Edge_To_Face_Connectivity[i].push_back(vector<unsigned long>(2,0));
-				Boundary_Edge_To_Face_Connectivity[i][boundary_edge_idx][0] = 0;
-				Boundary_Edge_To_Face_Connectivity[i][boundary_edge_idx][1] = 1;
+				//All exiting edges are connected to the zone (face 1) or the outside-the-zone face (face 0)
+				Boundary_Edge_To_Face_Connectivity[i].push_back(vector<unsigned long>(1,1));
 				boundary_edge_idx++;
 			}
 		}
@@ -414,7 +411,7 @@ CLookUpTable::CLookUpTable(CConfig *config, bool dimensional) :
 		Boundary_Edges[i][boundary_edge_idx][1] = nTable_Zone_Stations[i]+0;
 		boundary_edge_idx++;
 
-		//These 4 edges are only connected to face 0 (the outside-the-zone face)
+		//These 4 edges are connected to face 0 (the outside-the-zone face)
 		Boundary_Edge_To_Face_Connectivity[i].push_back(vector<unsigned long>(1,0));
 		Boundary_Edge_To_Face_Connectivity[i].push_back(vector<unsigned long>(1,0));
 		Boundary_Edge_To_Face_Connectivity[i].push_back(vector<unsigned long>(1,0));
@@ -466,7 +463,8 @@ CLookUpTable::CLookUpTable(CConfig *config, bool dimensional) :
 	}
 }
 
-pair<vector<su2double>,vector<su2double> > CLookUpTable::Get_Exentded_Zone_Boundaries(vector<su2double> const &x, vector<su2double> const &y ){
+pair<vector<su2double>,vector<su2double> > CLookUpTable::Get_Exentded_Zone_Boundaries(
+		vector<su2double> const &x, vector<su2double> const &y ){
 	//Copy the x and y arrays
 	vector<su2double> x_array(x);
 	vector<su2double> y_array(y);
@@ -574,116 +572,122 @@ void CLookUpTable::Get_Unique_Edges() {
 	}
 }
 void CLookUpTable::Compute_Interpolation_Coefficients() {
+	//Get th coefficients for all the zones
+	for (int k=0;k<nZones;k++){
+		//First build a KD tree for the current zone in Prho
+		PointIDs.resize(ThermoTables_Density[k].size(), 0);
+		coors.resize(2 * ThermoTables_Density[k].size(), 0);
 
-	//First build a KD tree for the current zone in Prho
-	PointIDs.resize(ThermoTables_Density[CurrentZone].size(), 0);
-	coors.resize(2 * ThermoTables_Density[CurrentZone].size(), 0);
-
-	for (unsigned long i = 0; i < ThermoTables_Density[CurrentZone].size(); i++) {
-		PointIDs[i] = i;
-		coors[2 * i] = ThermoTables_Density[CurrentZone][i];
-		coors[2 * i + 1] = ThermoTables_Pressure[CurrentZone][i];
-	}
-	KD_tree = new su2_adtPointsOnlyClass(2, PointIDs.size(), coors.data(),
-			PointIDs.data());
-	query.resize(2, 0);
-	best_dist.resize(nInterpPoints, 0);
-	result_IDs.resize(nInterpPoints, 0);
-	result_ranks.resize(nInterpPoints, 0);
-	//Allocate the space for all the interpolation coefficients to be stored
-	Rhoe_Interpolation_Matrix_Inverse[CurrentZone].resize(
-			Table_Zone_Triangles[CurrentZone].size(),
-			vector<vector<su2double> >(nInterpPoints,
-					vector<su2double>(nInterpPoints, 0)));
-	PT_Interpolation_Matrix_Inverse[CurrentZone].resize(
-			Table_Zone_Triangles[CurrentZone].size(),
-			vector<vector<su2double> >(nInterpPoints,
-					vector<su2double>(nInterpPoints, 0)));
-	Prho_Interpolation_Matrix_Inverse[CurrentZone].resize(
-			Table_Zone_Triangles[CurrentZone].size(),
-			vector<vector<su2double> >(nInterpPoints,
-					vector<su2double>(nInterpPoints, 0)));
-	rhoT_Interpolation_Matrix_Inverse[CurrentZone].resize(
-			Table_Zone_Triangles[CurrentZone].size(),
-			vector<vector<su2double> >(nInterpPoints,
-					vector<su2double>(nInterpPoints, 0)));
-	hs_Interpolation_Matrix_Inverse[CurrentZone].resize(
-			Table_Zone_Triangles[CurrentZone].size(),
-			vector<vector<su2double> >(nInterpPoints,
-					vector<su2double>(nInterpPoints, 0)));
-	Ps_Interpolation_Matrix_Inverse[CurrentZone].resize(
-			Table_Zone_Triangles[CurrentZone].size(),
-			vector<vector<su2double> >(nInterpPoints,
-					vector<su2double>(nInterpPoints, 0)));
-	//Also store the indexes of the points on which the coefficients are based
-	//as these directly yueld funciton values
-	Interpolation_Points[CurrentZone].resize(
-			Table_Zone_Triangles[CurrentZone].size(),
-			vector<unsigned long>(nInterpPoints, 0));
-
-	//Now for each triangle in the zone calculate the e.g. 16 nearest points
-	for (unsigned int i = 0; i < Table_Zone_Triangles[CurrentZone].size(); i++) {
-		vector<unsigned long> Points_in_Triangle = Table_Zone_Triangles[CurrentZone][i];
-		//The query point is to be the weighted average of the vertexes of the
-		//triangle
-		query[0] = 0;
-		query[1] = 0;
-		query[0] += ThermoTables_Density[CurrentZone][Points_in_Triangle[0]];
-		query[0] += ThermoTables_Density[CurrentZone][Points_in_Triangle[1]];
-		query[0] += ThermoTables_Density[CurrentZone][Points_in_Triangle[2]];
-		query[0] /= 3;
-		query[1] += ThermoTables_Pressure[CurrentZone][Points_in_Triangle[0]];
-		query[1] += ThermoTables_Pressure[CurrentZone][Points_in_Triangle[1]];
-		query[1] += ThermoTables_Pressure[CurrentZone][Points_in_Triangle[2]];
-		query[1] /= 3;
-		if (nInterpPoints>3){
-			//If more than 3 points are required, than search the tree for the closet points
-			KD_tree->Determine_N_NearestNodes(nInterpPoints, query.data(),
-					best_dist.data(), result_IDs.data(), result_ranks.data());
-			//Set the found points as the current points
-			CurrentPoints = result_IDs;
-			Interpolation_Points[CurrentZone][i] = result_IDs;
+		for (unsigned long i = 0; i < ThermoTables_Density[k].size(); i++) {
+			PointIDs[i] = i;
+			coors[2 * i] = ThermoTables_Density[k][i];
+			coors[2 * i + 1] = ThermoTables_Pressure[k][i];
 		}
-		else if (nInterpPoints==3)
-		{
-			result_IDs = Table_Zone_Triangles[CurrentZone][i];
-			CurrentPoints = result_IDs;
-			Interpolation_Points[CurrentZone][i] = result_IDs;
-		}
+		KD_tree = new su2_adtPointsOnlyClass(2, PointIDs.size(), coors.data(),
+				PointIDs.data());
+		query.resize(2, 0);
+		best_dist.resize(nInterpPoints, 0);
+		result_IDs.resize(nInterpPoints, 0);
+		result_ranks.resize(nInterpPoints, 0);
+		//Allocate the space for all the interpolation coefficients to be stored
+		Rhoe_Interpolation_Matrix_Inverse[k].resize(
+				Table_Zone_Triangles[k].size(),
+				vector<vector<su2double> >(nInterpPoints,
+						vector<su2double>(nInterpPoints, 0)));
+		PT_Interpolation_Matrix_Inverse[k].resize(
+				Table_Zone_Triangles[k].size(),
+				vector<vector<su2double> >(nInterpPoints,
+						vector<su2double>(nInterpPoints, 0)));
+		Prho_Interpolation_Matrix_Inverse[k].resize(
+				Table_Zone_Triangles[k].size(),
+				vector<vector<su2double> >(nInterpPoints,
+						vector<su2double>(nInterpPoints, 0)));
+		rhoT_Interpolation_Matrix_Inverse[k].resize(
+				Table_Zone_Triangles[k].size(),
+				vector<vector<su2double> >(nInterpPoints,
+						vector<su2double>(nInterpPoints, 0)));
+		hs_Interpolation_Matrix_Inverse[k].resize(
+				Table_Zone_Triangles[k].size(),
+				vector<vector<su2double> >(nInterpPoints,
+						vector<su2double>(nInterpPoints, 0)));
+		Ps_Interpolation_Matrix_Inverse[k].resize(
+				Table_Zone_Triangles[k].size(),
+				vector<vector<su2double> >(nInterpPoints,
+						vector<su2double>(nInterpPoints, 0)));
+		//Also store the indexes of the points on which the coefficients are based
+		//as these directly yueld funciton values
+		Interpolation_Points[k].resize(
+				Table_Zone_Triangles[k].size(),
+				vector<unsigned long>(nInterpPoints, 0));
 
-		//Now use the nearest 16 points to construct an interpolation function
-		//for each search pair option
-		Rhoe_Interpolation_Matrix_Inverse[CurrentZone][i] =
-				Interpolation_Matrix_Prepare_And_Invert(ThermoTables_Density,
-						ThermoTables_StaticEnergy);
-		PT_Interpolation_Matrix_Inverse[CurrentZone][i] =
-				Interpolation_Matrix_Prepare_And_Invert(ThermoTables_Pressure,
-						ThermoTables_Temperature);
-		Prho_Interpolation_Matrix_Inverse[CurrentZone][i] =
-				Interpolation_Matrix_Prepare_And_Invert(ThermoTables_Pressure,
-						ThermoTables_Density);
-		rhoT_Interpolation_Matrix_Inverse[CurrentZone][i] =
-				Interpolation_Matrix_Prepare_And_Invert(ThermoTables_Density,
-						ThermoTables_Temperature);
-		hs_Interpolation_Matrix_Inverse[CurrentZone][i] =
-				Interpolation_Matrix_Prepare_And_Invert(ThermoTables_Enthalpy,
-						ThermoTables_Entropy);
-		Ps_Interpolation_Matrix_Inverse[CurrentZone][i] =
-				Interpolation_Matrix_Prepare_And_Invert(ThermoTables_Pressure,
-						ThermoTables_Entropy);
+		//Now for each triangle in the zone calculate the e.g. 16 nearest points
+		for (unsigned int i = 0; i < Table_Zone_Triangles[k].size(); i++) {
+			vector<unsigned long> Points_in_Triangle = Table_Zone_Triangles[k][i];
+			//The query point is to be the weighted average of the vertexes of the
+			//triangle
+			query[0] = 0;
+			query[1] = 0;
+			query[0] += ThermoTables_Density[k][Points_in_Triangle[0]];
+			query[0] += ThermoTables_Density[k][Points_in_Triangle[1]];
+			query[0] += ThermoTables_Density[k][Points_in_Triangle[2]];
+			query[0] /= 3;
+			query[1] += ThermoTables_Pressure[k][Points_in_Triangle[0]];
+			query[1] += ThermoTables_Pressure[k][Points_in_Triangle[1]];
+			query[1] += ThermoTables_Pressure[k][Points_in_Triangle[2]];
+			query[1] /= 3;
+			if (nInterpPoints>3){
+				//If more than 3 points are required, than search the tree for the closet points
+				KD_tree->Determine_N_NearestNodes(nInterpPoints, query.data(),
+						best_dist.data(), result_IDs.data(), result_ranks.data());
+				//Set the found points as the current points
+				CurrentPoints = result_IDs;
+				Interpolation_Points[k][i] = result_IDs;
+			}
+			else if (nInterpPoints==3)
+			{
+				result_IDs = Table_Zone_Triangles[k][i];
+				CurrentPoints = result_IDs;
+				Interpolation_Points[k][i] = result_IDs;
+			}
+
+			//Now use the nearest 16 points to construct an interpolation function
+			//for each search pair option
+			Rhoe_Interpolation_Matrix_Inverse[k][i] =
+					Interpolation_Matrix_Prepare_And_Invert(ThermoTables_Density,
+							ThermoTables_StaticEnergy);
+			PT_Interpolation_Matrix_Inverse[k][i] =
+					Interpolation_Matrix_Prepare_And_Invert(ThermoTables_Pressure,
+							ThermoTables_Temperature);
+			Prho_Interpolation_Matrix_Inverse[k][i] =
+					Interpolation_Matrix_Prepare_And_Invert(ThermoTables_Pressure,
+							ThermoTables_Density);
+			rhoT_Interpolation_Matrix_Inverse[k][i] =
+					Interpolation_Matrix_Prepare_And_Invert(ThermoTables_Density,
+							ThermoTables_Temperature);
+			hs_Interpolation_Matrix_Inverse[k][i] =
+					Interpolation_Matrix_Prepare_And_Invert(ThermoTables_Enthalpy,
+							ThermoTables_Entropy);
+			Ps_Interpolation_Matrix_Inverse[k][i] =
+					Interpolation_Matrix_Prepare_And_Invert(ThermoTables_Pressure,
+							ThermoTables_Entropy);
+		}
 	}
 }
 
 void CLookUpTable::Get_Current_Zone(vector<CTrapezoidalMap> &t_map,su2double x, su2double y){
 	int in_zone = 0;
+	//Loop through all the zones
 	for (int i=0;i<nZones;i++){
-		t_map[i].Search_Simplexes(x, y);
-		in_zone = t_map[i].getCurrentFace();
-		if (in_zone == 1){
+		//Loop the boundary map for that zone and search it
+		t_map[i].Search_Bands_For(x);
+		t_map[i].Search_Band_For_Edge(x, y);
+		//Now check which faces the upper and lower edges are connected to
+		unsigned long upper_edge_belongs_to_zone = t_map[i].getUpperEdgeFaces()[0];
+		unsigned long lower_edge_belongs_to_zone = t_map[i].getLowerEdgeFaces()[0];
+		//These should both only be connected to face 1
+		if (upper_edge_belongs_to_zone == 1 and lower_edge_belongs_to_zone == 1){
 			CurrentZone = i;
-			if (rank == MASTER_NODE) {
-					cout<<"Switched to zone: "<<i<<endl;
-				}
+			//if (rank == MASTER_NODE) cout<<"Switched to zone: "<<i<<endl;
 			break; //stop iterating through the zones
 		}
 	}
