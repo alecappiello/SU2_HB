@@ -80,7 +80,8 @@ public:
 			vector<su2double> const &y_samples,
 			vector<vector<unsigned long> > const &unique_edges,
 			vector<vector<unsigned long> > const &edge_to_face_connectivity);
-	void Find_Containing_Simplex(su2double x, su2double y);
+
+	void Search_Simplexes(su2double x, su2double y);
 	void Search_Bands_For(su2double x);
 	void Search_Band_For_Edge(su2double x, su2double y);
 
@@ -101,7 +102,7 @@ class CLookUpTable: public CFluidModel {
 
 protected:
 	int rank;
-	unsigned int CurrentZone;
+	unsigned int CurrentZone, nZones, SinglePhaseZone;
 	unsigned int CurrentFace;
 	unsigned int nInterpPoints;
 	vector<unsigned long> CurrentPoints;
@@ -115,6 +116,8 @@ protected:
 	//Put the trapezoidal maps into variables
 	CTrapezoidalMap rhoe_map[2], Prho_map[2], hs_map[2], Ps_map[2], rhoT_map[2],
 			PT_map[2];
+	vector<CTrapezoidalMap> rhoe_boundary_map, Prho_boundary_map, hs_boundary_map, Ps_boundary_map, rhoT_boundary_map,
+				PT_boundary_map;
 
 	//Each triangle will have precomputed interpolation coefficients and
 	//matrices. The coefficients are simple the function values
@@ -185,8 +188,10 @@ public:
 	 */
 	void Get_Unique_Edges();
 
-	void Compute_Interpolation_Coefficients();
+	pair<vector<su2double>,vector<su2double> > Get_Exentded_Zone_Boundaries(vector<su2double> const &x, vector<su2double> const &y );
 
+	void Compute_Interpolation_Coefficients();
+	void Get_Current_Zone(vector<CTrapezoidalMap> &t_map,su2double x, su2double y);
 	void Get_Bounding_Simplex_From_TrapezoidalMap(CTrapezoidalMap *t_map,
 			su2double x, su2double y);
 

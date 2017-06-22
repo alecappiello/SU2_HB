@@ -28,7 +28,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with SU2. If not, see <http://www.gnu.org/licenses/>.
  */
-
 #include "../include/fluid_model_lut.hpp"
 
 #include <iostream>
@@ -154,7 +153,9 @@ CTrapezoidalMap::CTrapezoidalMap(vector<su2double> const &x_samples,
 		cout << duration << " seconds\n";
 }
 
-void CTrapezoidalMap::Find_Containing_Simplex(su2double x, su2double y) {
+
+
+void CTrapezoidalMap::Search_Simplexes(su2double x, su2double y) {
 	//Find the x band in which the current x value sits
 	Search_Bands_For(x);
 	//Within that band find edges between which the points rests
@@ -245,9 +246,10 @@ CLookUpTable::CLookUpTable(CConfig *config, bool dimensional) :
 	LUT_Debug_Mode = false;
 	rank = MASTER_NODE;
 	//TODO this has to be generalize for multi-zone
-	su2double SinglePhaseZone = 0;
+	SinglePhaseZone = 1;
 	CurrentZone= SinglePhaseZone;
 	nInterpPoints = 3;
+	nZones=0;//changes when LUT file reads
 	CurrentPoints.resize(nInterpPoints, 0);
 	LUT_Debug_Mode = config->GetLUT_Debug_Mode();
 	Interpolation_Matrix.resize(nInterpPoints,
@@ -310,9 +312,7 @@ CLookUpTable::CLookUpTable(CConfig *config, bool dimensional) :
 		// Building an KD_tree for the HS thermopair
 		cout << "Building trapezoidal map for rhoe..." << endl;
 	}
-	//Buld a map for all search pairs
-	//Currently only zone 1 is actually in use so one could
-	//also skip zone 0
+	//Buld a map for all search pair
 	rhoe_map[0] = CTrapezoidalMap(ThermoTables_Density[0],
 			ThermoTables_StaticEnergy[0], Table_Zone_Edges[0],
 			Table_Edge_To_Face_Connectivity[0]);
@@ -361,11 +361,11 @@ CLookUpTable::CLookUpTable(CConfig *config, bool dimensional) :
 	if (rank == MASTER_NODE) {
 		cout << "Building trapezoidal map for PT (in vapor region only)..." << endl;
 	}
-	PT_map[0] = CTrapezoidalMap(ThermoTables_Pressure[0],
-			ThermoTables_Temperature[0], Table_Zone_Edges[0],
-			Table_Edge_To_Face_Connectivity[0]);
+	PT_map[SinglePhaseZone] = CTrapezoidalMap(ThermoTables_Pressure[SinglePhaseZone],
+			ThermoTables_Temperature[SinglePhaseZone], Table_Zone_Edges[SinglePhaseZone],
+			Table_Edge_To_Face_Connectivity[SinglePhaseZone]);
 	;
-	PT_map[1] = PT_map[0];
+	PT_map[max(1-int(SinglePhaseZone),1)] = PT_map[SinglePhaseZone];
 
 	if (rank == MASTER_NODE) {
 		cout << "Print LUT errors? (LUT_Debug_Mode):  " << LUT_Debug_Mode << endl;
@@ -379,6 +379,90 @@ CLookUpTable::CLookUpTable(CConfig *config, bool dimensional) :
 		cout << "LuT fluid model ready for use" << endl;
 	}
 
+	//Create the zone switching trapezoidal maps
+
+	//Find which edges have only a single face connection (those are boundary edges)
+	vector<vector<unsigned long> > Boundary_Edges[nZones];
+	vector<vector<unsigned long> > Boundary_Edge_To_Face_Connectivity[nZones];
+	for (int i=0;i<nZones;i++){
+		for (int j=0; j<Table_Edge_To_Face_Connectivity[i].size(); j++){
+			if (Table_Edge_To_Face_Connectivity[i][j].size() < 2) {
+				Boundary_Edges[i].push_back(Table_Zone_Edges[i][j]);
+				//All exiting edges are connected to the zone (face 1) and the outside-the-zone face (face 0)
+				Boundary_Edge_To_Face_Connectivity[i].push_back(vector<unsigned long>(0,1));
+			}
+		}
+		//Append 4 edges to the list for a containing rectangle to be constructed around the map
+		Boundary_Edges[i].push_back(vector<unsigned long> (nTable_Zone_Stations[i]+0, nTable_Zone_Stations[i]+1));
+		Boundary_Edges[i].push_back(vector<unsigned long> (nTable_Zone_Stations[i]+1, nTable_Zone_Stations[i]+2));
+		Boundary_Edges[i].push_back(vector<unsigned long> (nTable_Zone_Stations[i]+2, nTable_Zone_Stations[i]+3));
+		Boundary_Edges[i].push_back(vector<unsigned long> (nTable_Zone_Stations[i]+3, nTable_Zone_Stations[i]+0));
+		//These 4 edges are only connected to face 0 (the outside-the-zone face)
+		Boundary_Edge_To_Face_Connectivity[i].push_back(vector<unsigned long>(0));
+		Boundary_Edge_To_Face_Connectivity[i].push_back(vector<unsigned long>(0));
+		Boundary_Edge_To_Face_Connectivity[i].push_back(vector<unsigned long>(0));
+		Boundary_Edge_To_Face_Connectivity[i].push_back(vector<unsigned long>(0));
+	}
+
+	//Build a trapezoidal map for the boundaries of each zone separately and for each
+	//one of the variable pairs.
+	if (rank == MASTER_NODE) {
+		cout<<"Building boundary maps"<<endl;
+	}
+	pair<vector<su2double>,vector<su2double> > boundary_coords;
+	for (int i=0;i<nZones;i++){
+		//Go through all the pairs (except PT, that's always set to SinglePhase)
+		//The boundary must also contain a bounding box
+		boundary_coords = Get_Exentded_Zone_Boundaries(ThermoTables_Density[i],
+				ThermoTables_StaticEnergy[i]);
+		rhoe_boundary_map.push_back(CTrapezoidalMap(boundary_coords.first,
+				boundary_coords.second, Boundary_Edges[i],
+				Boundary_Edge_To_Face_Connectivity[i]));
+
+		boundary_coords = Get_Exentded_Zone_Boundaries(ThermoTables_Pressure[i],
+				ThermoTables_Density[i]);
+		Prho_boundary_map.push_back(CTrapezoidalMap(boundary_coords.first,
+				boundary_coords.second, Boundary_Edges[i],
+				Boundary_Edge_To_Face_Connectivity[i]));
+
+		boundary_coords = Get_Exentded_Zone_Boundaries(ThermoTables_Enthalpy[i],
+				ThermoTables_Entropy[i]);
+		hs_boundary_map.push_back(CTrapezoidalMap(boundary_coords.first,
+				boundary_coords.second, Boundary_Edges[i],
+				Boundary_Edge_To_Face_Connectivity[i]));
+
+		boundary_coords = Get_Exentded_Zone_Boundaries(ThermoTables_Pressure[i],
+				ThermoTables_Entropy[i]);
+		Ps_boundary_map.push_back(CTrapezoidalMap(boundary_coords.first,
+				boundary_coords.second, Boundary_Edges[i],
+				Boundary_Edge_To_Face_Connectivity[i]));
+
+		boundary_coords = Get_Exentded_Zone_Boundaries(ThermoTables_Density[i],
+				ThermoTables_Temperature[i]);
+		rhoT_boundary_map.push_back(CTrapezoidalMap(boundary_coords.first,
+				boundary_coords.second, Boundary_Edges[i],
+				Boundary_Edge_To_Face_Connectivity[i]));
+
+	}
+	if (rank == MASTER_NODE) {
+		cout<<"Done building boundary maps for all zones"<<endl;
+	}
+}
+
+pair<vector<su2double>,vector<su2double> > CLookUpTable::Get_Exentded_Zone_Boundaries(vector<su2double> const &x, vector<su2double> const &y ){
+	//Copy the x and y arrays
+	vector<su2double> x_array(x);
+	vector<su2double> y_array(y);
+	//Add the enclosing rectangle values
+	su2double max_x = *max_element(x_array.begin(),x_array.end());
+	su2double min_x = *min_element(x_array.begin(),x_array.end());
+	su2double max_y = *max_element(y_array.begin(),y_array.end());
+	su2double min_y = *min_element(y_array.begin(),y_array.end());
+	x_array.push_back(0.9*min_x);y_array.push_back(0.9*min_y); //first point
+	x_array.push_back(1.1*max_x);y_array.push_back(0.9*min_y); //second point
+	x_array.push_back(1.1*max_x);y_array.push_back(1.1*max_y); //third point
+	x_array.push_back(0.9*min_x);y_array.push_back(1.1*max_y); //fourth point
+	return make_pair(x_array,y_array);
 }
 
 CLookUpTable::~CLookUpTable(void) {
@@ -573,17 +657,34 @@ void CLookUpTable::Compute_Interpolation_Coefficients() {
 	}
 }
 
+void CLookUpTable::Get_Current_Zone(vector<CTrapezoidalMap> &t_map,su2double x, su2double y){
+	int in_zone = 0;
+	for (int i=0;i<nZones;i++){
+		t_map[i].Search_Simplexes(x, y);
+		in_zone = t_map[i].getCurrentFace();
+		if (in_zone == 1){
+			CurrentZone = i;
+			if (rank == MASTER_NODE) {
+					cout<<"Switched to zone: "<<i<<endl;
+				}
+			break; //stop iterating through the zones
+		}
+	}
+}
+
 void CLookUpTable::Get_Bounding_Simplex_From_TrapezoidalMap(
 		CTrapezoidalMap *t_map, su2double x, su2double y) {
 
-	t_map[CurrentZone].Find_Containing_Simplex(x, y);
+	t_map[CurrentZone].Search_Simplexes(x, y);
 	CurrentFace = t_map[CurrentZone].getCurrentFace();
 	CurrentPoints = Interpolation_Points[CurrentZone][CurrentFace];
 
 }
 
-void CLookUpTable::SetTDState_rhoe(su2double rho, su2double e) {
 
+
+void CLookUpTable::SetTDState_rhoe(su2double rho, su2double e) {
+	Get_Current_Zone(rhoe_boundary_map,rho,e);
 	Get_Bounding_Simplex_From_TrapezoidalMap(rhoe_map, rho, e);
 	Interpolation_Matrix_Inverse =
 			Rhoe_Interpolation_Matrix_Inverse[CurrentZone][CurrentFace];
@@ -608,7 +709,7 @@ void CLookUpTable::SetTDState_rhoe(su2double rho, su2double e) {
 }
 
 void CLookUpTable::SetTDState_PT(su2double P, su2double T) {
-
+  CurrentZone = SinglePhaseZone;
 	Get_Bounding_Simplex_From_TrapezoidalMap(PT_map, P, T);
 	Interpolation_Matrix_Inverse =
 			PT_Interpolation_Matrix_Inverse[CurrentZone][CurrentFace];
@@ -633,7 +734,7 @@ void CLookUpTable::SetTDState_PT(su2double P, su2double T) {
 }
 
 void CLookUpTable::SetTDState_Prho(su2double P, su2double rho) {
-
+	Get_Current_Zone(Prho_boundary_map,P,rho);
 	Get_Bounding_Simplex_From_TrapezoidalMap(Prho_map, P, rho);
 	Interpolation_Matrix_Inverse =
 			Prho_Interpolation_Matrix_Inverse[CurrentZone][CurrentFace];
@@ -658,7 +759,7 @@ void CLookUpTable::SetTDState_Prho(su2double P, su2double rho) {
 }
 
 void CLookUpTable::SetEnergy_Prho(su2double P, su2double rho) {
-
+	Get_Current_Zone(Prho_boundary_map,P,rho);
 	Get_Bounding_Simplex_From_TrapezoidalMap(Prho_map, P, rho);
 	Interpolation_Matrix_Inverse =
 			Prho_Interpolation_Matrix_Inverse[CurrentZone][CurrentFace];
@@ -671,7 +772,7 @@ void CLookUpTable::SetEnergy_Prho(su2double P, su2double rho) {
 }
 
 void CLookUpTable::SetTDState_hs(su2double h, su2double s) {
-
+	Get_Current_Zone(hs_boundary_map,h,s);
 	Get_Bounding_Simplex_From_TrapezoidalMap(hs_map, h, s);
 	Interpolation_Matrix_Inverse =
 			hs_Interpolation_Matrix_Inverse[CurrentZone][CurrentFace];
@@ -696,7 +797,7 @@ void CLookUpTable::SetTDState_hs(su2double h, su2double s) {
 }
 
 void CLookUpTable::SetTDState_Ps(su2double P, su2double s) {
-
+	Get_Current_Zone(Ps_boundary_map,P,s);
 	Get_Bounding_Simplex_From_TrapezoidalMap(Ps_map, P, s);
 	Interpolation_Matrix_Inverse =
 			Ps_Interpolation_Matrix_Inverse[CurrentZone][CurrentFace];
@@ -721,7 +822,7 @@ void CLookUpTable::SetTDState_Ps(su2double P, su2double s) {
 }
 
 void CLookUpTable::SetTDState_rhoT(su2double rho, su2double T) {
-
+	Get_Current_Zone(rhoT_boundary_map,rho,T);
 	Get_Bounding_Simplex_From_TrapezoidalMap(rhoT_map, rho, T);
 	Interpolation_Matrix_Inverse =
 			rhoT_Interpolation_Matrix_Inverse[CurrentZone][CurrentFace];
@@ -1027,7 +1128,7 @@ void CLookUpTable::LookUpTable_Load_TEC(std::string filename) {
 			zone_scanned++;
 		}
 	}
-
+	nZones = zone_scanned;
 	table.close();
 	//NonDimensionalise
 	NonDimensionalise_Table_Values();
