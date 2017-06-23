@@ -365,7 +365,7 @@ CLookUpTable::CLookUpTable(CConfig *config, bool dimensional) :
 			ThermoTables_Temperature[SinglePhaseZone], Table_Zone_Edges[SinglePhaseZone],
 			Table_Edge_To_Face_Connectivity[SinglePhaseZone]);
 	;
-	PT_map[max(1-int(SinglePhaseZone),1)] = PT_map[SinglePhaseZone];
+	PT_map[1-int(SinglePhaseZone)] = PT_map[SinglePhaseZone];
 
 	if (rank == MASTER_NODE) {
 		cout << "Print LUT errors? (LUT_Debug_Mode):  " << LUT_Debug_Mode << endl;
