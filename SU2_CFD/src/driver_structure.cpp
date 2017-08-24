@@ -300,8 +300,8 @@ CDriver::CDriver(char* confFile,
       FFDBox[iZone] = new CFreeFormDefBox*[MAX_NUMBER_FFD];
       surface_movement[iZone] = new CSurfaceMovement();
       surface_movement[iZone]->CopyBoundary(geometry_container[iZone][MESH_0], config_container[iZone]);
-//      if (config_container[iZone]->GetUnsteady_Simulation() == SPECTRAL_METHOD)
-//        iteration_container[iZone]->SetGrid_Movement(geometry_container, surface_movement, grid_movement, FFDBox, solver_container, config_container, iZone, 0, 0);
+      if (config_container[iZone]->GetUnsteady_Simulation() == SPECTRAL_METHOD)
+        iteration_container[iZone]->SetGrid_Movement(geometry_container, surface_movement, grid_movement, FFDBox, solver_container, config_container, iZone, 0, 0);
     }
 
     if (config_container[iZone]->GetDirectDiff() == D_DESIGN){
@@ -3562,6 +3562,10 @@ void CSpectralDriver::Run() {
 		}
 	}
 
+  for (iZone = 0; iZone < nZone; iZone++)
+    /*--- Update the spectral source terms across all zones ---*/
+    SetSpectralMethod(iZone);
+
 	/*--- Run a single iteration of a spectral method problem. Preprocess all
    all zones before beginning the iteration. ---*/
 
@@ -3591,9 +3595,6 @@ void CSpectralDriver::Update(){
 
   for (iZone = 0; iZone < nZone; iZone++){
 
-    /*--- Update the spectral source terms across all zones ---*/
-
-    SetSpectralMethod(iZone);
 
     iteration_container[iZone]->Update(output, integration_container, geometry_container,
                                        solver_container, numerics_container, config_container,
@@ -4608,27 +4609,26 @@ void CDiscAdjSpectralDriver::SetRecording(unsigned short kind_recording){
   	}
   }
 
+
   for (iZone = 0; iZone < nZone; iZone++)
-  	SetSpectralMethod(iZone);
-
-  for (iZone = 0; iZone < nZone; iZone++) {
-
     direct_iteration[iZone]->Preprocess(output, integration_container, geometry_container,
                                       solver_container, numerics_container, config_container,
                                       surface_movement, grid_movement, FFDBox, iZone);
 
+  for (iZone = 0; iZone < nZone; iZone++)
     direct_iteration[iZone]->Iterate(output, integration_container, geometry_container,
                                       solver_container, numerics_container, config_container,
                                       surface_movement, grid_movement, FFDBox, iZone);
     
-    /*--- For flux-avg or area-avg objective functions the 1D values must be calculated first ---*/
-    if (config_container[iZone]->GetKind_ObjFunc()==AVG_OUTLET_PRESSURE ||
-        config_container[iZone]->GetKind_ObjFunc()==AVG_TOTAL_PRESSURE ||
-        config_container[iZone]->GetKind_ObjFunc()==MASS_FLOW_RATE)
-      output->OneDimensionalOutput(solver_container[iZone][MESH_0][FLOW_SOL],
-                                   geometry_container[iZone][MESH_0], config_container[iZone]);
+  for (iZone = 0; iZone < nZone; iZone++)
+  	SetSpectralMethod(iZone);
+//    /*--- For flux-avg or area-avg objective functions the 1D values must be calculated first ---*/
+//    if (config_container[iZone]->GetKind_ObjFunc()==AVG_OUTLET_PRESSURE ||
+//        config_container[iZone]->GetKind_ObjFunc()==AVG_TOTAL_PRESSURE ||
+//        config_container[iZone]->GetKind_ObjFunc()==MASS_FLOW_RATE)
+//      output->OneDimensionalOutput(solver_container[iZone][MESH_0][FLOW_SOL],
+//                                   geometry_container[iZone][MESH_0], config_container[iZone]);
 
-  }
 
   /* --- Set turboperformance for multi-zone ---*/
   if(config_container[ZONE_0]->GetBoolTurbomachinery()){
