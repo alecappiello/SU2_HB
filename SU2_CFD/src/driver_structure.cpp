@@ -3655,6 +3655,7 @@ void CSpectralDriver::SetSpectralMethod(unsigned short iZone) {
   if (adjoint) {
     implicit = (config_container[ZONE_0]->GetKind_TimeIntScheme_AdjFlow() == EULER_IMPLICIT);
   }
+  bool disc_adj = config_container[ZONE_0]->GetKind_Solver() == DISC_ADJ_RANS || config_container[ZONE_0]->GetKind_Solver() == DISC_ADJ_EULER;
   
   /*--- Retrieve values from the config file ---*/
   su2double *U = new su2double[nVar];
@@ -3716,7 +3717,7 @@ void CSpectralDriver::SetSpectralMethod(unsigned short iZone) {
             U[iVar] = solver_container[jZone][iMGlevel][FLOW_SOL]->node[iPoint]->GetSolution(iVar);
             Source[iVar] += U[iVar]*D[iZone][jZone];
             
-            if (implicit) {
+            if (implicit && ExtIter < 8000 && !disc_adj) {
               U_old[iVar] = solver_container[jZone][iMGlevel][FLOW_SOL]->node[iPoint]->GetSolution_Old(iVar);
               deltaU = U[iVar] - U_old[iVar];
               Source[iVar] += deltaU*D[iZone][jZone];
@@ -3738,7 +3739,7 @@ void CSpectralDriver::SetSpectralMethod(unsigned short iZone) {
         
         /*--- Store sources for current row ---*/
         for (iVar = 0; iVar < nVar; iVar++) {
-          if (!adjoint) {
+          if (!adjoint ) {
             solver_container[iZone][iMGlevel][FLOW_SOL]->node[iPoint]->SetSpectralMethod_Source(iVar, Source[iVar]);
           }
           else {
@@ -4609,6 +4610,8 @@ void CDiscAdjSpectralDriver::SetRecording(unsigned short kind_recording){
   	}
   }
 
+  for (iZone = 0; iZone < nZone; iZone++)
+  	SetSpectralMethod(iZone);
 
   for (iZone = 0; iZone < nZone; iZone++)
     direct_iteration[iZone]->Preprocess(output, integration_container, geometry_container,
@@ -4620,8 +4623,6 @@ void CDiscAdjSpectralDriver::SetRecording(unsigned short kind_recording){
                                       solver_container, numerics_container, config_container,
                                       surface_movement, grid_movement, FFDBox, iZone);
     
-  for (iZone = 0; iZone < nZone; iZone++)
-  	SetSpectralMethod(iZone);
 //    /*--- For flux-avg or area-avg objective functions the 1D values must be calculated first ---*/
 //    if (config_container[iZone]->GetKind_ObjFunc()==AVG_OUTLET_PRESSURE ||
 //        config_container[iZone]->GetKind_ObjFunc()==AVG_TOTAL_PRESSURE ||

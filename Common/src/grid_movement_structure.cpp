@@ -2190,6 +2190,21 @@ void CVolumetricMovement::Rigid_Pitching(CGeometry *geometry, CConfig *config, u
   alphaDot[1] = -Omega[1]*Ampl[1]*cos(Omega[1]*time_new);
   alphaDot[2] = -Omega[2]*Ampl[2]*cos(Omega[2]*time_new);
 
+//  /* airfoil pitching with alpha1*sin(omega1*t+Phase) + alpha2*sin(omega2) */
+//    su2double *Omega2 = new su2double[3];
+//    su2double *Ampl2 = new su2double[3];
+//    Omega2[0] =  2.6*Omega[0]; Omega2[1] =  2.6*Omega[1]; Omega2[2] = 2.6*Omega[2];
+//    Ampl2[0] = Ampl[0]; Ampl2[1] = Ampl[1]; Ampl2[2] = Ampl[2];
+//
+//    dtheta = -Ampl[0]*(sin(Omega[0]*time_new + Phase[0]) - sin(Omega[0]*time_old + Phase[0])) -Ampl2[0]*(sin(Omega2[0]*time_new + Phase[0]) - sin(Omega2[0]*time_old + Phase[0]));
+//    dphi   = -Ampl[1]*(sin(Omega[1]*time_new + Phase[1]) - sin(Omega[1]*time_old + Phase[1])) -Ampl2[1]*(sin(Omega2[1]*time_new + Phase[1]) - sin(Omega2[1]*time_old + Phase[1]));
+//    dpsi   = -Ampl[2]*(sin(Omega[2]*time_new + Phase[2]) - sin(Omega[2]*time_old + Phase[2])) -Ampl2[2]*(sin(Omega2[2]*time_new + Phase[2]) - sin(Omega2[2]*time_old + Phase[2]));
+//
+//    /*--- Angular velocity at the new time ---*/
+//    alphaDot[0] = -Omega[0]*Ampl[0]*cos(Omega[0]*time_new) -Omega2[0]*Ampl2[0]*cos(Omega2[0]*time_new);
+//    alphaDot[1] = -Omega[1]*Ampl[1]*cos(Omega[1]*time_new) -Omega2[1]*Ampl2[1]*cos(Omega2[1]*time_new);
+//    alphaDot[2] = -Omega[2]*Ampl[2]*cos(Omega[2]*time_new) -Omega2[2]*Ampl2[2]*cos(Omega2[2]*time_new);
+
   if (rank == MASTER_NODE && iter == 0) {
       cout << " Pitching frequency: (" << Omega[0] << ", " << Omega[1];
       cout << ", " << Omega[2] << ") rad/s." << endl;
