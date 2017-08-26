@@ -817,6 +817,14 @@ CEulerSolver::CEulerSolver(CGeometry *geometry, CConfig *config, unsigned short 
           if (nDim == 3) point_line >> index >> dull_val >> dull_val >> dull_val >> Solution[0] >> Solution[1] >> Solution[2] >> Solution[3] >> Solution[4];
         }
         node[iPoint_Local] = new CEulerVariable(Solution, nDim, nVar, config);
+        if (config->GetUnsteady_Simulation() == SPECTRAL_METHOD){
+          if (compressible) {
+            if (nDim == 2) point_line >> Solution[0] >> Solution[1] >> Solution[2] >> Solution[3];
+            if (nDim == 3) point_line >> Solution[0] >> Solution[1] >> Solution[2] >> Solution[3] >> Solution[4];
+          }
+        }
+//        cout << "s0 " <<Solution[0] << " s1 " << Solution[1] << " s2 " << Solution[2] << " s3 " << Solution[3] <<endl;
+        node[iPoint_Local]->SetSolution_Old(Solution);
         iPoint_Global_Local++;
       }
       iPoint_Global++;
@@ -926,6 +934,8 @@ CEulerSolver::CEulerSolver(CGeometry *geometry, CConfig *config, unsigned short 
   //TODO fix order of comunication the periodic should be first otherwise you have wrong values on the halo cell after restart
   Set_MPI_Solution(geometry, config);
   Set_MPI_Solution(geometry, config);
+  Set_MPI_Solution_Old(geometry, config);
+  Set_MPI_Solution_Old(geometry, config);
 
 }
 
