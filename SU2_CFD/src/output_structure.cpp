@@ -1943,7 +1943,6 @@ void COutput::MergeSolution(CConfig *config, CGeometry *geometry, CSolver **solv
   unsigned long nLocalPoint = 0, MaxLocalPoint = 0;
   unsigned long iGlobal_Index = 0, nBuffer_Scalar = 0;
   bool Wrt_Halo = config->GetWrt_Halo(), isPeriodic;
-  bool spectral_method = (config->GetUnsteady_Simulation() == SPECTRAL_METHOD);
   
   int iProcessor;
   int rank = MASTER_NODE;
@@ -2021,8 +2020,6 @@ void COutput::MergeSolution(CConfig *config, CGeometry *geometry, CSolver **solv
     
     if (config->GetWrt_Limiters()) nVar_Total += nVar_Consv;
     
-    if (spectral_method) nVar_Total += nVar_Consv;
-
     /*--- Add the residuals ---*/
     
     if (config->GetWrt_Residuals()) nVar_Total += nVar_Consv;
@@ -2251,9 +2248,6 @@ void COutput::MergeSolution(CConfig *config, CGeometry *geometry, CSolver **solv
         
         Buffer_Send_Var[jPoint] = solver[CurrentIndex]->node[iPoint]->GetSolution(jVar);
         
-        if (spectral_method)
-          Buffer_Send_Vol[jPoint] = solver[CurrentIndex]->node[iPoint]->GetSolution_Old(jVar);
-
         if (!config->GetLow_MemoryOutput()) {
           
           if (config->GetWrt_Limiters()) {
@@ -2291,7 +2285,7 @@ void COutput::MergeSolution(CConfig *config, CGeometry *geometry, CSolver **solv
 #endif
     if (!config->GetLow_MemoryOutput()) {
       
-      if (config->GetWrt_Limiters() || spectral_method) {
+      if (config->GetWrt_Limiters()) {
 #ifdef HAVE_MPI
         SU2_MPI::Gather(Buffer_Send_Vol, nBuffer_Scalar, MPI_DOUBLE, Buffer_Recv_Vol, nBuffer_Scalar, MPI_DOUBLE, MASTER_NODE, MPI_COMM_WORLD);
 #else
@@ -2329,8 +2323,6 @@ void COutput::MergeSolution(CConfig *config, CGeometry *geometry, CSolver **solv
           iGlobal_Index = Buffer_Recv_GlobalIndex[jPoint];
           
           Data[iVar][iGlobal_Index] = Buffer_Recv_Var[jPoint];
-          if (spectral_method)
-            Data[iVar+nVar_Consv][iGlobal_Index] = Buffer_Recv_Vol[jPoint];
           
           if (!config->GetLow_MemoryOutput()) {
             
@@ -3748,11 +3740,6 @@ void COutput::SetRestart(CConfig *config, CGeometry *geometry, CSolver **solver,
       }
     }
     
-    if (config->GetUnsteady_Simulation() == SPECTRAL_METHOD) {
-      for (iVar = 0; iVar < nVar_Consv; iVar++) {
-        restart_file << "\t\"Sol_Old_" << iVar+1<<"\"";
-      }
-    }
     /*--- Mesh velocities for dynamic mesh cases ---*/
     
     if (grid_movement && !fem) {

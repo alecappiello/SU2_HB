@@ -278,8 +278,8 @@ void CDiscAdjSolver::SetRecording(CGeometry* geometry, CConfig *config){
 
   /*--- Set the Jacobian to zero since this is not done inside the meanflow iteration
    * when running the discrete adjoint solver. ---*/
-
-  direct_solver->Jacobian.SetValZero();
+  if ( config->GetKind_TimeIntScheme_Flow() == EULER_IMPLICIT)
+      direct_solver->Jacobian.SetValZero();
 
   /*--- Set indices to zero ---*/
 
