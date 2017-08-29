@@ -519,6 +519,10 @@ inline su2double* CVariable::GetSolution_Direct() { return NULL; }
 
 inline void CVariable::SetSolution_Direct(su2double *val_solution_direct) { }
 
+inline su2double* CVariable::GetSolution_DirectOld() { return NULL; }
+
+inline void CVariable::SetSolution_DirectOld(su2double *val_solution_direct_old) { }
+
 inline void CVariable::SetSpectralMethod_Source(unsigned short val_var, su2double val_source) { }
 
 inline su2double CVariable::GetSpectralMethod_Source(unsigned short val_var) { return 0; }
@@ -1136,5 +1140,12 @@ inline su2double* CDiscAdjVariable::GetSolution_Direct() { return Solution_Direc
 inline void CDiscAdjVariable::SetSolution_Direct(su2double *val_solution_direct) {
   for (unsigned short iVar = 0; iVar < nVar; iVar++){
     Solution_Direct[iVar] = val_solution_direct[iVar];
+  }
+}
+inline su2double* CDiscAdjVariable::GetSolution_DirectOld() { return Solution_DirectOld; }
+
+inline void CDiscAdjVariable::SetSolution_DirectOld(su2double *val_solution_direct_old) {
+  for (unsigned short iVar = 0; iVar < nVar; iVar++){
+    Solution_DirectOld[iVar] = val_solution_direct_old[iVar];
   }
 }

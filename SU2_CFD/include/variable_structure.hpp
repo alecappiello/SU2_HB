@@ -1808,6 +1808,18 @@ public:
 	 * \return Pointer to the direct solution vector.
 	 */
 	virtual su2double *GetSolution_Direct(void);
+/*!
+ * \brief Set the value of the old solution.
+ * \param[in] val_solution_old - Pointer to the residual vector.
+ */
+virtual void SetSolution_DirectOld(su2double *val_solution_direct_old);
+/*!
+ * \brief Get the old solution of the problem
+ * \param[in] val_var - Index of the variable.
+ */
+virtual su2double  *GetSolution_DirectOld(void);
+
+
 
 
 	/*!
@@ -3988,6 +4000,7 @@ class CDiscAdjVariable : public CVariable {
 private:
     su2double* Sensitivity; /* Vector holding the derivative of target functional with respect to the coordinates at this node*/
     su2double* Solution_Direct;
+    su2double* Solution_DirectOld;
     su2double* DualTime_Derivative;
     su2double* DualTime_Derivative_n;
 
@@ -4036,6 +4049,10 @@ public:
     void SetSolution_Direct(su2double *sol);
 
     su2double* GetSolution_Direct();
+
+    void SetSolution_DirectOld(su2double *sol);
+
+    su2double* GetSolution_DirectOld();
 };
 
 

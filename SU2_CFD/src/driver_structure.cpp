@@ -3562,6 +3562,11 @@ void CSpectralDriver::Run() {
 		}
 	}
 
+int rank = MASTER_NODE;
+#ifdef HAVE_MPI
+MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+#endif
+
   for (iZone = 0; iZone < nZone; iZone++)
     /*--- Update the spectral source terms across all zones ---*/
     SetSpectralMethod(iZone);
@@ -3586,6 +3591,26 @@ void CSpectralDriver::Run() {
 			solver_container[iZone][MESH_0][FLOW_SOL]->TurboPerformance(config_container[iZone], geometry_container[iZone][MESH_0]);
 		}
 	}
+
+for (iZone = 0; iZone < nZone; iZone++) {
+
+  //    if ((rank == MASTER_NODE) && (kind_recording == SOLUTION) && (config_container[iZone]->GetExtIter() == 0)){
+  if (rank == MASTER_NODE){
+    cout << endl << "Convergence of direct solver for Zone " << iZone << ": " << endl;
+
+    cout << "  log10[RMS Density]: "<< log10(solver_container[iZone][MESH_0][FLOW_SOL]->GetRes_RMS(0))
+               <<", Drag: " <<solver_container[iZone][MESH_0][FLOW_SOL]->GetTotal_CDrag()
+               <<", Lift: " << solver_container[iZone][MESH_0][FLOW_SOL]->GetTotal_CLift() << "." << endl;
+
+    if (config_container[iZone]->GetKind_Turb_Model() != NONE){
+      cout << "  log10[RMS k]:       " << log10(solver_container[iZone][MESH_0][TURB_SOL]->GetRes_RMS(0)) << endl;
+      if (config_container[iZone]->GetKind_Turb_Model() == SST){
+        cout << "  log10[RMS omega]:   " << log10(solver_container[iZone][MESH_0][TURB_SOL]->GetRes_RMS(1)) << endl;
+      }
+    }
+    cout << "Entropy Gen: " << solver_container[iZone][MESH_0][FLOW_SOL]->GetEntropyGen(config_container[iZone]->GetnMarker_TurboPerformance() - 1) << endl;
+  }
+}
 
 	SetSpectralAverage();
 
@@ -3715,13 +3740,19 @@ void CSpectralDriver::SetSpectralMethod(unsigned short iZone) {
           
           if (!adjoint) {
             U[iVar] = solver_container[jZone][iMGlevel][FLOW_SOL]->node[iPoint]->GetSolution(iVar);
-            Source[iVar] += U[iVar]*D[iZone][jZone];
+//            Source[iVar] += U[iVar]*D[iZone][jZone];
             
 //            if (implicit && ExtIter < 18000 && !disc_adj) {
             if (implicit) {
               U_old[iVar] = solver_container[jZone][iMGlevel][FLOW_SOL]->node[iPoint]->GetSolution_Old(iVar);
               deltaU = U[iVar] - U_old[iVar];
-              Source[iVar] += deltaU*D[iZone][jZone];
+//              Source[iVar] += deltaU*D[iZone][jZone];
+              if (iPoint == 20 && iVar == 0 ) {
+//                cout << "ZONE:  " << jZone << endl;
+//                cout << "NEW:  " << U[0] << endl;
+//                cout << "OLD:  " << U_old[0] << endl;
+              }
+
             }
             
           }
