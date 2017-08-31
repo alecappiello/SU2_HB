@@ -222,11 +222,12 @@ CDiscAdjSolver::CDiscAdjSolver(CGeometry *geometry, CConfig *config, CSolver *di
   /*--- Store the direct solution ---*/
 
   for (iPoint = 0; iPoint < nPoint; iPoint++){
+    node[iPoint]->SetSolution_DirectOld(direct_solver->node[iPoint]->GetSolution_Old());
+  }
+
+  for (iPoint = 0; iPoint < nPoint; iPoint++){
     node[iPoint]->SetSolution_Direct(direct_solver->node[iPoint]->GetSolution());
   }
-//  for (iPoint = 0; iPoint < nPoint; iPoint++){
-//    node[iPoint]->SetSolution_DirectOld(direct_solver->node[iPoint]->GetSolution_Old());
-//  }
 }
 
 CDiscAdjSolver::~CDiscAdjSolver(void){ 
@@ -268,13 +269,12 @@ void CDiscAdjSolver::SetRecording(CGeometry* geometry, CConfig *config){
     direct_solver->node[iPoint]->SetSolution_Old(node[iPoint]->GetSolution_Old());
   }
 
-  if (time_n_needed){
     for (iPoint = 0; iPoint < nPoint; iPoint++){
       for (iVar = 0; iVar < nVar; iVar++){
         AD::ResetInput(direct_solver->node[iPoint]->GetSolution_Old()[iVar]);
       }
     }
-  }
+
   if (time_n1_needed){
     for (iPoint = 0; iPoint < nPoint; iPoint++){
       for (iVar = 0; iVar < nVar; iVar++){
@@ -285,7 +285,7 @@ void CDiscAdjSolver::SetRecording(CGeometry* geometry, CConfig *config){
 
   /*--- Set the Jacobian to zero since this is not done inside the meanflow iteration
    * when running the discrete adjoint solver. ---*/
-//  if ( config->GetKind_TimeIntScheme_Flow() == EULER_IMPLICIT)
+  if ( config->GetKind_TimeIntScheme_Flow() == EULER_IMPLICIT)
       direct_solver->Jacobian.SetValZero();
 
   /*--- Set indices to zero ---*/
@@ -307,6 +307,10 @@ void CDiscAdjSolver::RegisterSolution(CGeometry *geometry, CConfig *config){
   for (iPoint = 0; iPoint < nPoint; iPoint++){
     direct_solver->node[iPoint]->RegisterSolution(input);
   }
+//  for (iPoint = 0; iPoint < nPoint; iPoint++){
+//    direct_solver->node[iPoint]->RegisterSolutionOld();
+//  }
+
   if (time_n_needed){
     for (iPoint = 0; iPoint < nPoint; iPoint++){
       direct_solver->node[iPoint]->RegisterSolution_time_n();

@@ -1025,7 +1025,11 @@ inline su2double **CFEABoundVariable::GetTraction(void) { return Traction; }
 
 inline su2double* CWaveVariable::GetSolution_Direct() { return Solution_Direct;}
 
+inline su2double* CWaveVariable::GetSolution_DirectOld() { return Solution_Direct_Old;}
+
 inline void CWaveVariable::SetSolution_Direct(su2double *val_solution_direct) { for (unsigned short iVar = 0; iVar < nVar; iVar++) Solution_Direct[iVar] += val_solution_direct[iVar];}
+
+inline void CWaveVariable::SetSolution_DirectOld(su2double *val_solution_direct_old) { for (unsigned short iVar = 0; iVar < nVar; iVar++) Solution_Direct_Old[iVar] += val_solution_direct_old[iVar];}
 
 inline su2double* CPotentialVariable::GetChargeDensity() { return Charge_Density;}
 
@@ -1033,7 +1037,11 @@ inline void CPotentialVariable::SetChargeDensity(su2double positive_charge, su2d
 
 inline su2double* CHeatVariable::GetSolution_Direct() { return Solution_Direct;}
 
+inline su2double* CHeatVariable::GetSolution_DirectOld() { return Solution_Direct_Old;}
+
 inline void CHeatVariable::SetSolution_Direct(su2double *val_solution_direct) { for (unsigned short iVar = 0; iVar < nVar; iVar++) Solution_Direct[iVar] += val_solution_direct[iVar];}
+
+inline void CHeatVariable::SetSolution_DirectOld(su2double *val_solution_direct_old) { for (unsigned short iVar = 0; iVar < nVar; iVar++) Solution_Direct_Old[iVar] += val_solution_direct_old[iVar];}
 
 inline void CTurbSAVariable::SetSpectralMethod_Source(unsigned short val_var, su2double val_source) { TS_Source[val_var] = val_source; }
 
@@ -1064,6 +1072,11 @@ inline void CVariable::RegisterSolution(bool input) {
   }
   else { for (unsigned short iVar = 0; iVar < nVar; iVar++)
       AD::RegisterOutput(Solution[iVar]);}
+}
+
+inline void CVariable::RegisterSolutionOld(){
+  for (unsigned short iVar = 0; iVar < nVar; iVar++)
+    AD::RegisterInput(Solution_Old[iVar]);
 }
 
 inline void CVariable::RegisterSolution_time_n(){

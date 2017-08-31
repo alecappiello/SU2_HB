@@ -2051,6 +2051,11 @@ virtual su2double  *GetSolution_DirectOld(void);
   /*!
    * \brief Register the variables in the solution_time_n array as input/output variable.
    */
+  void RegisterSolutionOld();
+
+  /*!
+   * \brief Register the variables in the solution_time_n array as input/output variable.
+   */
   void RegisterSolution_time_n();
 
   /*!
@@ -2200,6 +2205,7 @@ public:
 class CWaveVariable : public CVariable {
 protected:
 	su2double *Solution_Direct;  /*!< \brief Direct solution container for use in the adjoint wave solver. */
+	su2double *Solution_Direct_Old;  /*!< \brief Direct solution container for use in the adjoint wave solver. */
 
 public:
 
@@ -2233,6 +2239,17 @@ public:
 	 * \return Pointer to the direct solution vector.
 	 */
 	su2double *GetSolution_Direct(void);
+	/*!
+	 * \brief Set the direct solution for the adjoint solver.
+	 * \param[in] val_solution_direct - Value of the direct solution.
+	 */
+	void SetSolution_DirectOld(su2double *val_solution_direct_old);
+
+	/*!
+	 * \brief Get the direct solution for the adjoint solver.
+	 * \return Pointer to the direct solution vector.
+	 */
+	su2double *GetSolution_DirectOld(void);
 
 };
 
@@ -2246,6 +2263,7 @@ public:
 class CHeatVariable : public CVariable {
 protected:
 	su2double *Solution_Direct;  /*!< \brief Direct solution container for use in the adjoint Heat solver. */
+	su2double *Solution_Direct_Old;  /*!< \brief Direct solution container for use in the adjoint Heat solver. */
 
 public:
 
@@ -2279,6 +2297,18 @@ public:
 	 * \return Pointer to the direct solution vector.
 	 */
 	su2double *GetSolution_Direct(void);
+
+	/*!
+	 * \brief Set the direct solution for the adjoint solver.
+	 * \param[in] val_solution_direct - Value of the direct solution.
+	 */
+	void SetSolution_DirectOld(su2double *val_solution_direct_old);
+
+	/*!
+	 * \brief Get the direct solution for the adjoint solver.
+	 * \return Pointer to the direct solution vector.
+	 */
+	su2double *GetSolution_DirectOld(void);
 
 };
 
@@ -4050,7 +4080,7 @@ public:
 
     su2double* GetSolution_Direct();
 
-    void SetSolution_DirectOld(su2double *sol);
+    void SetSolution_DirectOld(su2double *sol_old);
 
     su2double* GetSolution_DirectOld();
 };

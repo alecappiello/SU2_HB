@@ -1840,6 +1840,10 @@ void CSolver::RegisterSolution(CGeometry *geometry, CConfig *config){
   for (iPoint = 0; iPoint < nPoint; iPoint++){
     node[iPoint]->RegisterSolution(input);
   }
+
+//  for (iPoint = 0; iPoint < nPoint; iPoint++){
+//    node[iPoint]->RegisterSolutionOld();
+//  }
   if (time_n_needed){
     for (iPoint = 0; iPoint < nPoint; iPoint++){
       node[iPoint]->RegisterSolution_time_n();
