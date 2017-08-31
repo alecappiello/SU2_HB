@@ -1943,7 +1943,8 @@ void COutput::MergeSolution(CConfig *config, CGeometry *geometry, CSolver **solv
   unsigned long nLocalPoint = 0, MaxLocalPoint = 0;
   unsigned long iGlobal_Index = 0, nBuffer_Scalar = 0;
   bool Wrt_Halo = config->GetWrt_Halo(), isPeriodic;
-  bool spectral_method = (config->GetUnsteady_Simulation() == SPECTRAL_METHOD);
+  bool disc_adj = config->GetKind_Solver() == DISC_ADJ_RANS || config->GetKind_Solver() == DISC_ADJ_EULER || config->GetKind_Solver() == DISC_ADJ_NAVIER_STOKES;
+  bool spectral_method = (config->GetUnsteady_Simulation() == SPECTRAL_METHOD & !disc_adj );
   
   int iProcessor;
   int rank = MASTER_NODE;
@@ -3748,7 +3749,8 @@ void COutput::SetRestart(CConfig *config, CGeometry *geometry, CSolver **solver,
       }
     }
     
-    if (config->GetUnsteady_Simulation() == SPECTRAL_METHOD) {
+  bool disc_adj = config->GetKind_Solver() == DISC_ADJ_RANS || config->GetKind_Solver() == DISC_ADJ_EULER || config->GetKind_Solver() == DISC_ADJ_NAVIER_STOKES;
+    if (config->GetUnsteady_Simulation() == SPECTRAL_METHOD && !disc_adj)  {
       for (iVar = 0; iVar < nVar_Consv; iVar++) {
         restart_file << "\t\"Sol_Old_" << iVar+1<<"\"";
       }

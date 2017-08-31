@@ -15599,6 +15599,7 @@ CNSSolver::CNSSolver(CGeometry *geometry, CConfig *config, unsigned short iMesh)
 
     getline (restart_file, text_line);
 
+su2double Solution_Old[nVar];
     while (getline (restart_file, text_line)) {
       istringstream point_line(text_line);
 
@@ -15632,11 +15633,11 @@ CNSSolver::CNSSolver(CGeometry *geometry, CConfig *config, unsigned short iMesh)
 
         if (config->GetUnsteady_Simulation() == SPECTRAL_METHOD){
           if (compressible) {
-            if (nDim == 2) point_line >> index >> dull_val >> dull_val >> Solution[0] >> Solution[1] >> Solution[2] >> Solution[3];
-            if (nDim == 3) point_line >> index >> dull_val >> dull_val >> dull_val >> Solution[0] >> Solution[1] >> Solution[2] >> Solution[3] >> Solution[4];
+            if (nDim == 2) point_line >> index  >> dull_val >> dull_val >> Solution_Old[0] >> Solution_Old[1] >> Solution_Old[2] >> Solution_Old[3];
+            if (nDim == 3) point_line >> index  >> dull_val >> dull_val >> dull_val >> Solution_Old[0] >> Solution_Old[1] >> Solution_Old[2] >> Solution_Old[3] >> Solution_Old[4];
           }
         }
-        node[iPoint_Local]->SetSolution_Old(Solution);
+        node[iPoint_Local]->SetSolution_Old(Solution_Old);
 
         iPoint_Global_Local++;
       }
