@@ -228,6 +228,8 @@ CDiscAdjSolver::CDiscAdjSolver(CGeometry *geometry, CConfig *config, CSolver *di
   for (iPoint = 0; iPoint < nPoint; iPoint++){
     node[iPoint]->SetSolution_Direct(direct_solver->node[iPoint]->GetSolution());
   }
+//  cout << "NEW  :  " << direct_solver->node[200]->GetSolution()[0];
+//  cout << "OLD  :  " << direct_solver->node[200]->GetSolution_Old()[0];
 }
 
 CDiscAdjSolver::~CDiscAdjSolver(void){ 
@@ -266,14 +268,14 @@ void CDiscAdjSolver::SetRecording(CGeometry* geometry, CConfig *config){
   }
 
   for (iPoint = 0; iPoint < nPoint; iPoint++){
-    direct_solver->node[iPoint]->SetSolution_Old(node[iPoint]->GetSolution_Old());
+    direct_solver->node[iPoint]->SetSolution_Old(node[iPoint]->GetSolution_DirectOld());
   }
 
-    for (iPoint = 0; iPoint < nPoint; iPoint++){
-      for (iVar = 0; iVar < nVar; iVar++){
-        AD::ResetInput(direct_solver->node[iPoint]->GetSolution_Old()[iVar]);
-      }
-    }
+//    for (iPoint = 0; iPoint < nPoint; iPoint++){
+//      for (iVar = 0; iVar < nVar; iVar++){
+//        AD::ResetInput(direct_solver->node[iPoint]->GetSolution_DirectOld()[iVar]);
+//      }
+//    }
 
   if (time_n1_needed){
     for (iPoint = 0; iPoint < nPoint; iPoint++){
