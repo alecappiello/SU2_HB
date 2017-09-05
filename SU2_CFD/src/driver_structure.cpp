@@ -300,8 +300,8 @@ CDriver::CDriver(char* confFile,
       FFDBox[iZone] = new CFreeFormDefBox*[MAX_NUMBER_FFD];
       surface_movement[iZone] = new CSurfaceMovement();
       surface_movement[iZone]->CopyBoundary(geometry_container[iZone][MESH_0], config_container[iZone]);
-      if (config_container[iZone]->GetUnsteady_Simulation() == SPECTRAL_METHOD)
-        iteration_container[iZone]->SetGrid_Movement(geometry_container, surface_movement, grid_movement, FFDBox, solver_container, config_container, iZone, 0, 0);
+//      if (config_container[iZone]->GetUnsteady_Simulation() == SPECTRAL_METHOD)
+//        iteration_container[iZone]->SetGrid_Movement(geometry_container, surface_movement, grid_movement, FFDBox, solver_container, config_container, iZone, 0, 0, false);
     }
 
     if (config_container[iZone]->GetDirectDiff() == D_DESIGN){
@@ -3057,7 +3057,7 @@ void CSingleZoneDriver::DynamicMeshUpdate(unsigned long ExtIter){
 
   /*--- Dynamic mesh update ---*/
   if ((config_container[ZONE_0]->GetGrid_Movement()) && (!spectral_method)) {
-    iteration_container[ZONE_0]->SetGrid_Movement(geometry_container, surface_movement, grid_movement, FFDBox, solver_container, config_container, ZONE_0, 0, ExtIter );
+    iteration_container[ZONE_0]->SetGrid_Movement(geometry_container, surface_movement, grid_movement, FFDBox, solver_container, config_container, ZONE_0, 0, ExtIter, false );
   }
 
 }
@@ -3228,7 +3228,7 @@ void CMultiZoneDriver::DynamicMeshUpdate(unsigned long ExtIter){
     spectral_method = (config_container[iZone]->GetUnsteady_Simulation() == SPECTRAL_METHOD);
     /*--- Dynamic mesh update ---*/
     if ((config_container[iZone]->GetGrid_Movement()) && (!spectral_method)) {
-      iteration_container[iZone]->SetGrid_Movement(geometry_container, surface_movement, grid_movement, FFDBox, solver_container, config_container, iZone, 0, ExtIter );
+      iteration_container[iZone]->SetGrid_Movement(geometry_container, surface_movement, grid_movement, FFDBox, solver_container, config_container, iZone, 0, ExtIter, false );
     }
   }
 
@@ -3436,6 +3436,10 @@ void CDiscAdjMultiZoneDriver::SetRecording(unsigned short kind_recording){
   for (iZone = 0; iZone < nZone; iZone++) {
     iteration_container[iZone]->SetDependencies(solver_container, geometry_container, config_container, iZone, kind_recording);
   }
+
+
+
+
   if(config_container[ZONE_0]->GetBoolTurbomachinery()){
     for (iZone = 0; iZone < nZone; iZone++){
       SetGeoTurboAvgValues(iZone, true);
@@ -3539,36 +3543,34 @@ CSpectralDriver::~CSpectralDriver(void) {
 
 void CSpectralDriver::Run() {
 
-	unsigned long ExtIter = config_container[ZONE_0]->GetExtIter();
+  unsigned long ExtIter = config_container[ZONE_0]->GetExtIter();
 
-	/*--- If this is the first iteration, set up the spectral operators,
+  /*--- If this is the first iteration, set up the spectral operators,
    initialize the source terms, and compute any grid veocities, if necessary. ---*/
-	if (ExtIter == 0) {
-		if (config_container[ZONE_0]->GetGrid_Movement() && (config_container[ZONE_0]->GetSpectralMethod_Type() == TIME_SPECTRAL))
-			SetTimeSpectral_Velocities();
-		for (iZone = 0; iZone < nZone; iZone++)
-			SetSpectralMethod(iZone);
-	}
 
-	/*--- set-rotating frame and geometric average quantities for Turbomachinery computation ---*/
-	if(ExtIter == 0){
-		if(config_container[ZONE_0]->GetBoolTurbomachinery()){
-			for (iZone = 0; iZone < nZone; iZone++)
-				SetGeoTurboAvgValues(iZone, true);
-		}
-		for (iZone = 0; iZone < nZone; iZone++){
-			solver_container[iZone][MESH_0][FLOW_SOL]->TurboMixingProcess(geometry_container[iZone][MESH_0],config_container[iZone],INFLOW);
-			solver_container[iZone][MESH_0][FLOW_SOL]->TurboMixingProcess(geometry_container[iZone][MESH_0],config_container[iZone],OUTFLOW);
-		}
-	}
+  /*--- set-rotating frame and geometric average quantities for Turbomachinery computation ---*/
+  if(ExtIter == 0){
+    if(config_container[ZONE_0]->GetBoolTurbomachinery()){
+      for (iZone = 0; iZone < nZone; iZone++)
+        SetGeoTurboAvgValues(iZone, true);
+    }
+    for (iZone = 0; iZone < nZone; iZone++){
+      solver_container[iZone][MESH_0][FLOW_SOL]->TurboMixingProcess(geometry_container[iZone][MESH_0],config_container[iZone],INFLOW);
+      solver_container[iZone][MESH_0][FLOW_SOL]->TurboMixingProcess(geometry_container[iZone][MESH_0],config_container[iZone],OUTFLOW);
+    }
+  }
+  if (ExtIter == 0) {
+    for (iZone = 0; iZone < nZone; iZone++)
+      iteration_container[iZone]->SetGrid_Movement(geometry_container, surface_movement, grid_movement, FFDBox, solver_container, config_container, iZone, 0, 0, false);
+  }
 
 int rank = MASTER_NODE;
 #ifdef HAVE_MPI
 MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 #endif
 
-  for (iZone = 0; iZone < nZone; iZone++)
     /*--- Update the spectral source terms across all zones ---*/
+  for (iZone = 0; iZone < nZone; iZone++)
     SetSpectralMethod(iZone);
 
 	/*--- Run a single iteration of a spectral method problem. Preprocess all
@@ -3746,8 +3748,6 @@ void CSpectralDriver::SetSpectralMethod(unsigned short iZone) {
               U_old[iVar] = solver_container[jZone][iMGlevel][FLOW_SOL]->node[iPoint]->GetSolution_Old(iVar);
               deltaU = U[iVar] - U_old[iVar];
               Source[iVar] += deltaU*D[iZone][jZone];
-              if (iPoint == 20 && iVar == 0 ) {
-              }
 
             }
             
@@ -4541,7 +4541,7 @@ void CDiscAdjSpectralDriver::Run() {
   	}
   }
 
-  SetSpectralAverage();
+
 
   SetSensitivity(SOLUTION);
 
@@ -4610,6 +4610,14 @@ void CDiscAdjSpectralDriver::SetRecording(unsigned short kind_recording){
 
   }
 
+  //  if (ExtIter == 0) {
+    for (iZone = 0; iZone < nZone; iZone++)
+      direct_iteration[iZone]->SetGrid_Movement(geometry_container, surface_movement, grid_movement, FFDBox, solver_container, config_container, iZone, 0, 0, false);
+//  }
+
+
+
+
   if (kind_recording != NONE){
 
     AD::StartRecording();
@@ -4638,8 +4646,9 @@ void CDiscAdjSpectralDriver::SetRecording(unsigned short kind_recording){
   	}
   }
 
+
   for (iZone = 0; iZone < nZone; iZone++)
-  	SetSpectralMethod(iZone);
+    SetSpectralMethod(iZone);
 
   for (iZone = 0; iZone < nZone; iZone++)
     direct_iteration[iZone]->Preprocess(output, integration_container, geometry_container,
@@ -4699,7 +4708,11 @@ void CDiscAdjSpectralDriver::SetRecording(unsigned short kind_recording){
 
 
   AD::StopRecording();
-
+//  if (ExtIter == 0) {
+      /*--- Reset Grid movement ---*/
+    for (iZone = 0; iZone < nZone; iZone++)
+      direct_iteration[iZone]->SetGrid_Movement(geometry_container, surface_movement, grid_movement, FFDBox, solver_container, config_container, iZone, 0, 0, true);
+//  }
 }
 
 CFSIDriver::CFSIDriver(char* confFile,
@@ -4754,7 +4767,7 @@ void CFSIDriver::Run() {
 
     iteration_container[ZONE_FLOW]->SetGrid_Movement(geometry_container,surface_movement,
                                                      grid_movement, FFDBox, solver_container,
-                                                     config_container, ZONE_FLOW, 0, ExtIter);
+                                                     config_container, ZONE_FLOW, 0, ExtIter, false);
 
     iteration_container[ZONE_FLOW]->Preprocess(output, integration_container, geometry_container,
 		                               solver_container, numerics_container, config_container,
@@ -5060,7 +5073,7 @@ void CFSIDriver::Update(unsigned short ZONE_FLOW, unsigned short ZONE_STRUCT){
 
   iteration_container[ZONE_FLOW]->SetGrid_Movement(geometry_container, surface_movement,
                                                    grid_movement, FFDBox, solver_container,
-                                                   config_container, ZONE_FLOW, IntIter, ExtIter);
+                                                   config_container, ZONE_FLOW, IntIter, ExtIter, false);
 
   /*----------- Store the solution_pred as solution_pred_old --------------*/
 

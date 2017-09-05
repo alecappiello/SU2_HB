@@ -2104,7 +2104,7 @@ void CVolumetricMovement::Rigid_Rotation(CGeometry *geometry, CConfig *config,
 
 }
 
-void CVolumetricMovement::Rigid_Pitching(CGeometry *geometry, CConfig *config, unsigned short iZone, unsigned long iter) {
+void CVolumetricMovement::Rigid_Pitching(CGeometry *geometry, CConfig *config, unsigned short iZone, unsigned long iter, bool reset) {
   
   int rank = MASTER_NODE;
 #ifdef HAVE_MPI
@@ -2127,6 +2127,7 @@ void CVolumetricMovement::Rigid_Pitching(CGeometry *geometry, CConfig *config, u
   bool adjoint = config->GetContinuous_Adjoint();
 
   
+
   /*--- Retrieve values from the config file ---*/
   deltaT = config->GetDelta_UnstTimeND(); 
   Lref   = config->GetLength_Ref();
@@ -2183,6 +2184,14 @@ void CVolumetricMovement::Rigid_Pitching(CGeometry *geometry, CConfig *config, u
 	dtheta = -Ampl[0]*(sin(Omega[0]*time_new + Phase[0]) - sin(Omega[0]*time_old + Phase[0]));
 	dphi   = -Ampl[1]*(sin(Omega[1]*time_new + Phase[1]) - sin(Omega[1]*time_old + Phase[1]));
 	dpsi   = -Ampl[2]*(sin(Omega[2]*time_new + Phase[2]) - sin(Omega[2]*time_old + Phase[2]));
+
+
+if(reset){
+  dtheta = -dtheta;
+  dphi = -dphi;
+  dpsi = -dpsi;
+}
+
   
   /*--- Angular velocity at the new time ---*/
   
@@ -2268,7 +2277,19 @@ void CVolumetricMovement::Rigid_Pitching(CGeometry *geometry, CConfig *config, u
     newGridVel[0] = GridVel[0] + alphaDot[1]*rotCoord[2] - alphaDot[2]*rotCoord[1];
     newGridVel[1] = GridVel[1] + alphaDot[2]*rotCoord[0] - alphaDot[0]*rotCoord[2];
     newGridVel[2] = GridVel[2] + alphaDot[0]*rotCoord[1] - alphaDot[1]*rotCoord[0];
-    
+
+    if (spectral_method){
+      newGridVel[0] = alphaDot[1]*rotCoord[2] - alphaDot[2]*rotCoord[1];
+      newGridVel[1] = alphaDot[2]*rotCoord[0] - alphaDot[0]*rotCoord[2];
+      newGridVel[2] = alphaDot[0]*rotCoord[1] - alphaDot[1]*rotCoord[0];
+    }
+    if (reset){
+      newGridVel[0] = 0.;
+      newGridVel[1] = 0.;
+      newGridVel[2] = 0.;
+    }
+
+
     /*--- Store new node location & grid velocity. Add center location.
      Do not store the grid velocity if this is an adjoint calculation.---*/
     

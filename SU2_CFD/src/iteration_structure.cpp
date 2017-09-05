@@ -42,7 +42,8 @@ void CIteration::SetGrid_Movement(CGeometry ***geometry_container,
 				  CConfig **config_container,
                       		  unsigned short val_iZone,
 				  unsigned long IntIter,
-				  unsigned long ExtIter)   {
+				  unsigned long ExtIter,
+				  bool reset_movement)   {
 
   unsigned short iDim, iMGlevel, nMGlevels = config_container[val_iZone]->GetnMGLevels();
   unsigned short Kind_Grid_Movement = config_container[val_iZone]->GetKind_GridMovement(val_iZone);
@@ -148,7 +149,7 @@ void CIteration::SetGrid_Movement(CGeometry ***geometry_container,
       grid_movement[val_iZone]->Rigid_Plunging(geometry_container[val_iZone][MESH_0],
                                     config_container[val_iZone], val_iZone, ExtIter);
       grid_movement[val_iZone]->Rigid_Pitching(geometry_container[val_iZone][MESH_0],
-                                    config_container[val_iZone], val_iZone, ExtIter);
+                                    config_container[val_iZone], val_iZone, ExtIter, reset_movement);
       grid_movement[val_iZone]->Rigid_Rotation(geometry_container[val_iZone][MESH_0],
                                     config_container[val_iZone], val_iZone, ExtIter);
 
@@ -292,7 +293,7 @@ void CIteration::SetGrid_Movement(CGeometry ***geometry_container,
           grid_movement[val_iZone]->Rigid_Plunging(geometry_container[val_iZone][MESH_0],
                                         config_container[val_iZone], val_iZone, ExtIter);
           grid_movement[val_iZone]->Rigid_Pitching(geometry_container[val_iZone][MESH_0],
-                                        config_container[val_iZone], val_iZone, ExtIter);
+                                        config_container[val_iZone], val_iZone, ExtIter, reset_movement);
           grid_movement[val_iZone]->Rigid_Rotation(geometry_container[val_iZone][MESH_0],
                                         config_container[val_iZone], val_iZone, ExtIter);
 
@@ -597,7 +598,7 @@ void CMeanFlowIteration::Iterate(COutput *output,
       /*--- Call Dynamic mesh update if AEROELASTIC motion was specified ---*/
       if ((config_container[val_iZone]->GetGrid_Movement()) && (config_container[val_iZone]->GetAeroelastic_Simulation())) {
         SetGrid_Movement(geometry_container, surface_movement, grid_movement, FFDBox,
-                         solver_container, config_container, val_iZone, IntIter, ExtIter);
+                         solver_container, config_container, val_iZone, IntIter, ExtIter, false);
         /*--- Apply a Wind Gust ---*/
         if (config_container[val_iZone]->GetWind_Gust()) {
           if (IntIter % config_container[val_iZone]->GetAeroelasticIter() ==0)

@@ -968,7 +968,7 @@ public:
    * \param[in] iZone - Zone number in the mesh.
    * \param[in] iter - Physical time iteration number.
 	 */
-	void Rigid_Pitching(CGeometry *geometry, CConfig *config, unsigned short iZone, unsigned long iter);
+	void Rigid_Pitching(CGeometry *geometry, CConfig *config, unsigned short iZone, unsigned long iter, bool reset);
   
   /*!
 	 * \brief Unsteady plunging grid movement using rigid mesh motion.
