@@ -2125,6 +2125,7 @@ void CVolumetricMovement::Rigid_Pitching(CGeometry *geometry, CConfig *config, u
   unsigned long iPoint;
   bool spectral_method = (config->GetUnsteady_Simulation() == SPECTRAL_METHOD);
   bool adjoint = config->GetContinuous_Adjoint();
+  bool disc_adj = config->GetKind_Solver() == DISC_ADJ_RANS || config->GetKind_Solver() == DISC_ADJ_EULER || config->GetKind_Solver() == DISC_ADJ_NAVIER_STOKES;
 
   
 
@@ -2295,7 +2296,7 @@ if(reset){
     
     for (iDim = 0; iDim < nDim; iDim++) {
       geometry->node[iPoint]->SetCoord(iDim, rotCoord[iDim]+Center[iDim]);
-      if (!adjoint) geometry->node[iPoint]->SetGridVel(iDim, newGridVel[iDim]);
+      if (!adjoint || !disc_adj) geometry->node[iPoint]->SetGridVel(iDim, newGridVel[iDim]);
     }
   }
   

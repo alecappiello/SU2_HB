@@ -3682,7 +3682,9 @@ void CSpectralDriver::SetSpectralMethod(unsigned short iZone) {
   if (adjoint) {
     implicit = (config_container[ZONE_0]->GetKind_TimeIntScheme_AdjFlow() == EULER_IMPLICIT);
   }
-  bool disc_adj = config_container[ZONE_0]->GetKind_Solver() == DISC_ADJ_RANS || config_container[ZONE_0]->GetKind_Solver() == DISC_ADJ_EULER;
+  bool disc_adj = config_container[ZONE_0]->GetKind_Solver() == DISC_ADJ_RANS ||
+      config_container[ZONE_0]->GetKind_Solver() == DISC_ADJ_EULER ||
+      config_container[ZONE_0]->GetKind_Solver() == DISC_ADJ_NAVIER_STOKES;
   
   /*--- Retrieve values from the config file ---*/
   su2double *U = new su2double[nVar];
@@ -3740,7 +3742,7 @@ void CSpectralDriver::SetSpectralMethod(unsigned short iZone) {
         /*--- Retrieve solution at this node in current zone ---*/
         for (iVar = 0; iVar < nVar; iVar++) {
           
-          if (!adjoint) {
+//          if (!adjoint) {
             U[iVar] = solver_container[jZone][iMGlevel][FLOW_SOL]->node[iPoint]->GetSolution(iVar);
             Source[iVar] += U[iVar]*D[iZone][jZone];
             
@@ -3751,28 +3753,28 @@ void CSpectralDriver::SetSpectralMethod(unsigned short iZone) {
 
             }
             
-          }
-          
-          else {
-            Psi[iVar] = solver_container[jZone][iMGlevel][ADJFLOW_SOL]->node[iPoint]->GetSolution(iVar);
-            Source[iVar] += Psi[iVar]*D[jZone][iZone];
-            
-            if (implicit) {
-              Psi_old[iVar] = solver_container[jZone][iMGlevel][ADJFLOW_SOL]->node[iPoint]->GetSolution_Old(iVar);
-              deltaPsi = Psi[iVar] - Psi_old[iVar];
-              Source[iVar] += deltaPsi*D[jZone][iZone];
-            }
-          }
+//          }
+//
+//          else {
+//            Psi[iVar] = solver_container[jZone][iMGlevel][ADJFLOW_SOL]->node[iPoint]->GetSolution(iVar);
+//            Source[iVar] += Psi[iVar]*D[jZone][iZone];
+//
+//            if (implicit) {
+//              Psi_old[iVar] = solver_container[jZone][iMGlevel][ADJFLOW_SOL]->node[iPoint]->GetSolution_Old(iVar);
+//              deltaPsi = Psi[iVar] - Psi_old[iVar];
+//              Source[iVar] += deltaPsi*D[jZone][iZone];
+//            }
+//          }
         }
         
         /*--- Store sources for current row ---*/
         for (iVar = 0; iVar < nVar; iVar++) {
-          if (!adjoint ) {
+//          if (!adjoint ) {
             solver_container[iZone][iMGlevel][FLOW_SOL]->node[iPoint]->SetSpectralMethod_Source(iVar, Source[iVar]);
-          }
-          else {
-            solver_container[iZone][iMGlevel][ADJFLOW_SOL]->node[iPoint]->SetSpectralMethod_Source(iVar, Source[iVar]);
-          }
+//          }
+//          else {
+//            solver_container[iZone][iMGlevel][ADJFLOW_SOL]->node[iPoint]->SetSpectralMethod_Source(iVar, Source[iVar]);
+//          }
         }
         
       }
@@ -4453,11 +4455,9 @@ void CSpectralDriver::SetSpectralAverage(){
 	    avg_CDrag += solver_container[iZone][MESH_0][FLOW_SOL]->GetTotal_CDrag();
 	  }
 	  avg_CDrag /= nZone;
-	  //for (unsigned short iZone = 0; iZone < nZone; iZone++)                                                              
-	  //solver_container[iZone][MESH_0][FLOW_SOL]->SetTotal_Avg_CDrag(avg_CDrag);
        
-        for (unsigned short iZone = 0; iZone < nZone; iZone++)
-	  solver_container[iZone][MESH_0][FLOW_SOL]->SetTotal_CDrag(avg_CDrag);
+//        for (unsigned short iZone = 0; iZone < nZone; iZone++)
+//	  solver_container[iZone][MESH_0][FLOW_SOL]->SetTotal_CDrag(avg_CDrag);
 
 	switch (config_container[ZONE_0]->GetKind_SpectralAverage()) {
 	case ARITHMETIC_MEAN:
@@ -4610,10 +4610,6 @@ void CDiscAdjSpectralDriver::SetRecording(unsigned short kind_recording){
 
   }
 
-  //  if (ExtIter == 0) {
-    for (iZone = 0; iZone < nZone; iZone++)
-      direct_iteration[iZone]->SetGrid_Movement(geometry_container, surface_movement, grid_movement, FFDBox, solver_container, config_container, iZone, 0, 0, false);
-//  }
 
 
 
@@ -4635,6 +4631,10 @@ void CDiscAdjSpectralDriver::SetRecording(unsigned short kind_recording){
   for (iZone = 0; iZone < nZone; iZone++) {
   	iteration_container[iZone]->SetDependencies(solver_container, geometry_container, config_container, iZone, kind_recording);
   }
+  //  if (ExtIter == 0) {
+    for (iZone = 0; iZone < nZone; iZone++)
+      direct_iteration[iZone]->SetGrid_Movement(geometry_container, surface_movement, grid_movement, FFDBox, solver_container, config_container, iZone, 0, 0, false);
+//  }
 
   if(config_container[ZONE_0]->GetBoolTurbomachinery()){
   	for (iZone = 0; iZone < nZone; iZone++){
