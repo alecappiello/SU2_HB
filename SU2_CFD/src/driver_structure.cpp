@@ -3742,7 +3742,7 @@ void CSpectralDriver::SetSpectralMethod(unsigned short iZone) {
         /*--- Retrieve solution at this node in current zone ---*/
         for (iVar = 0; iVar < nVar; iVar++) {
           
-//          if (!adjoint) {
+          if (!adjoint) {
             U[iVar] = solver_container[jZone][iMGlevel][FLOW_SOL]->node[iPoint]->GetSolution(iVar);
             Source[iVar] += U[iVar]*D[iZone][jZone];
             
@@ -3753,7 +3753,7 @@ void CSpectralDriver::SetSpectralMethod(unsigned short iZone) {
 
             }
             
-//          }
+          }
 //
 //          else {
 //            Psi[iVar] = solver_container[jZone][iMGlevel][ADJFLOW_SOL]->node[iPoint]->GetSolution(iVar);
@@ -4618,6 +4618,12 @@ void CDiscAdjSpectralDriver::SetRecording(unsigned short kind_recording){
 
     AD::StartRecording();
 
+  //  if (ExtIter == 0) {
+    for (iZone = 0; iZone < nZone; iZone++)
+      direct_iteration[iZone]->SetGrid_Movement(geometry_container, surface_movement, grid_movement, FFDBox, solver_container, config_container, iZone, 0, 0, false);
+//  }
+  for (iZone = 0; iZone < nZone; iZone++)
+    SetSpectralMethod(iZone);
     if ((rank == MASTER_NODE) && (kind_recording == SOLUTION) && (config_container[ZONE_0]->GetExtIter() == 0)){
       cout << "Direct iteration to store computational graph." << endl;
     }
@@ -4631,10 +4637,6 @@ void CDiscAdjSpectralDriver::SetRecording(unsigned short kind_recording){
   for (iZone = 0; iZone < nZone; iZone++) {
   	iteration_container[iZone]->SetDependencies(solver_container, geometry_container, config_container, iZone, kind_recording);
   }
-  //  if (ExtIter == 0) {
-    for (iZone = 0; iZone < nZone; iZone++)
-      direct_iteration[iZone]->SetGrid_Movement(geometry_container, surface_movement, grid_movement, FFDBox, solver_container, config_container, iZone, 0, 0, false);
-//  }
 
   if(config_container[ZONE_0]->GetBoolTurbomachinery()){
   	for (iZone = 0; iZone < nZone; iZone++){
@@ -4647,8 +4649,6 @@ void CDiscAdjSpectralDriver::SetRecording(unsigned short kind_recording){
   }
 
 
-  for (iZone = 0; iZone < nZone; iZone++)
-    SetSpectralMethod(iZone);
 
   for (iZone = 0; iZone < nZone; iZone++)
     direct_iteration[iZone]->Preprocess(output, integration_container, geometry_container,

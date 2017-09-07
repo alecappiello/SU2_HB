@@ -2296,7 +2296,7 @@ if(reset){
     
     for (iDim = 0; iDim < nDim; iDim++) {
       geometry->node[iPoint]->SetCoord(iDim, rotCoord[iDim]+Center[iDim]);
-      if (!adjoint || !disc_adj) geometry->node[iPoint]->SetGridVel(iDim, newGridVel[iDim]);
+      if (!adjoint) geometry->node[iPoint]->SetGridVel(iDim, newGridVel[iDim]);
     }
   }
   
