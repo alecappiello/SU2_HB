@@ -4627,10 +4627,6 @@ void CDiscAdjSpectralDriver::SetRecording(unsigned short kind_recording){
     }
 
   }
-  //  if (ExtIter == 0) {
-    for (iZone = 0; iZone < nZone; iZone++)
-      direct_iteration[iZone]->SetGrid_Movement(geometry_container, surface_movement, grid_movement, FFDBox, solver_container, config_container, iZone, 0, 0, false);
-//  }
 
   for (iZone = 0; iZone < nZone; iZone++) {
   	iteration_container[iZone]->SetDependencies(solver_container, geometry_container, config_container, iZone, kind_recording);
@@ -4646,6 +4642,10 @@ void CDiscAdjSpectralDriver::SetRecording(unsigned short kind_recording){
   	}
   }
 
+  //  if (ExtIter == 0) {
+    for (iZone = 0; iZone < nZone; iZone++)
+      direct_iteration[iZone]->SetGrid_Movement(geometry_container, surface_movement, grid_movement, FFDBox, solver_container, config_container, iZone, 0, 0, false);
+//  }
   for (iZone = 0; iZone < nZone; iZone++)
     SetSpectralMethod(iZone);
 
