@@ -89,6 +89,7 @@ protected:
   unsigned long *Point_Max; /*!< \brief Vector with the maximal residual for each variable. */
   su2double **Point_Max_Coord; /*!< \brief Vector with pointers to the coords of the maximal residual for each variable. */
 	su2double *Solution,		/*!< \brief Auxiliary nVar vector. */
+        *Source,		/*!< \brief Auxiliary nVar vector. */
 	*Solution_i,				/*!< \brief Auxiliary nVar vector for storing the solution at point i. */
 	*Solution_j;				/*!< \brief Auxiliary nVar vector for storing the solution at point j. */
 	su2double *Vector,	/*!< \brief Auxiliary nDim vector. */

@@ -1755,11 +1755,13 @@ void CDiscAdjMeanFlowIteration::Preprocess(COutput *output,
     for (iPoint = 0; iPoint < geometry_container[val_iZone][MESH_0]->GetnPoint(); iPoint++){
       solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->node[iPoint]->SetSolution_Direct(solver_container[val_iZone][MESH_0][FLOW_SOL]->node[iPoint]->GetSolution());
       solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->node[iPoint]->SetSolution_DirectOld(solver_container[val_iZone][MESH_0][FLOW_SOL]->node[iPoint]->GetSolution_Old());
+//      solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->node[iPoint]->SetHBSource_Direct(solver_container[val_iZone][MESH_0][FLOW_SOL]->node[iPoint]->GetHB_Source());
     }
     if (turbulent){
       for (iPoint = 0; iPoint < geometry_container[val_iZone][MESH_0]->GetnPoint(); iPoint++){
         solver_container[val_iZone][MESH_0][ADJTURB_SOL]->node[iPoint]->SetSolution_Direct(solver_container[val_iZone][MESH_0][TURB_SOL]->node[iPoint]->GetSolution());
         solver_container[val_iZone][MESH_0][ADJTURB_SOL]->node[iPoint]->SetSolution_DirectOld(solver_container[val_iZone][MESH_0][TURB_SOL]->node[iPoint]->GetSolution_Old());
+//        solver_container[val_iZone][MESH_0][ADJTURB_SOL]->node[iPoint]->SetHBSource_Direct(solver_container[val_iZone][MESH_0][TURB_SOL]->node[iPoint]->GetHB_Source());
       }
     }
   }

@@ -36,6 +36,7 @@ CDiscAdjVariable::CDiscAdjVariable() : CVariable(){
 
   Solution_Direct = NULL;
   Solution_DirectOld = NULL;
+  HB_Source_Direct = NULL;
   Sensitivity    = NULL;
 
   DualTime_Derivative   = NULL;
@@ -52,6 +53,7 @@ CDiscAdjVariable::CDiscAdjVariable(su2double* val_solution, unsigned short val_n
   /*--- Initialize arrays to NULL ---*/
 
   Solution_Direct = NULL;
+  HB_Source_Direct = NULL;
   Solution_DirectOld = NULL;
   Sensitivity    = NULL;
 
@@ -65,6 +67,7 @@ CDiscAdjVariable::CDiscAdjVariable(su2double* val_solution, unsigned short val_n
 
   Solution_Direct = new su2double[nVar];
   Solution_DirectOld = new su2double[nVar];
+  HB_Source_Direct = new su2double[nVar];
 
   Sensitivity = new su2double[nDim];
 
@@ -92,6 +95,7 @@ CDiscAdjVariable::CDiscAdjVariable(su2double* val_solution, unsigned short val_n
 CDiscAdjVariable::~CDiscAdjVariable(){
 
   if (Solution_Direct != NULL) delete [] Solution_Direct;
+  if (HB_Source_Direct != NULL) delete [] HB_Source_Direct;
   if (Solution_DirectOld != NULL) delete [] Solution_DirectOld;
   if (Sensitivity     != NULL) delete [] Sensitivity;
 

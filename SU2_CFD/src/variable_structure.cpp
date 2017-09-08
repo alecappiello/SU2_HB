@@ -38,6 +38,8 @@ CVariable::CVariable(void) {
   /*--- Array initialization ---*/
   Solution = NULL;
 	Solution_Old = NULL;
+	Solution_Old_tn = NULL;
+	HBSource = NULL;
 	Solution_time_n = NULL;
 	Solution_time_n1 = NULL;
 	Gradient = NULL;
@@ -57,6 +59,8 @@ CVariable::CVariable(unsigned short val_nvar, CConfig *config) {
   /*--- Array initialization ---*/
   Solution = NULL;
 	Solution_Old = NULL;
+	Solution_Old_tn = NULL;
+	HBSource = NULL;
 	Solution_time_n = NULL;
 	Solution_time_n1 = NULL;
 	Gradient = NULL;
@@ -78,6 +82,7 @@ CVariable::CVariable(unsigned short val_nvar, CConfig *config) {
 	 to allocate some extra flow variables that do not participate
 	 in the simulation ---*/
 	Solution = new su2double [nVar];
+	HBSource = new su2double [nVar];
 	for (unsigned short iVar = 0; iVar < nVar; iVar++)
 		Solution[iVar] = 0.0;
   
@@ -90,6 +95,8 @@ CVariable::CVariable(unsigned short val_nDim, unsigned short val_nvar, CConfig *
   /*--- Array initialization ---*/
   Solution = NULL;
 	Solution_Old = NULL;
+	Solution_Old_tn = NULL;
+	HBSource = NULL;
 	Solution_time_n = NULL;
 	Solution_time_n1 = NULL;
 	Gradient = NULL;
@@ -116,6 +123,8 @@ CVariable::CVariable(unsigned short val_nDim, unsigned short val_nvar, CConfig *
 		Solution[iVar] = 0.0;
 
 	Solution_Old = new su2double [nVar];
+	Solution_Old_tn = new su2double [nVar];
+	HBSource = new su2double [nVar];
 	
 	Gradient = new su2double* [nVar];
 	for (iVar = 0; iVar < nVar; iVar++) {
@@ -136,6 +145,8 @@ CVariable::~CVariable(void) {
 
   if (Solution            != NULL) delete [] Solution;
 	if (Solution_Old        != NULL) delete [] Solution_Old;
+	if (Solution_Old_tn     != NULL) delete [] Solution_Old_tn;
+	if (HBSource            != NULL) delete [] HBSource;
 	if (Solution_time_n     != NULL) delete [] Solution_time_n;
 	if (Solution_time_n1    != NULL) delete [] Solution_time_n1;
 	if (Limiter             != NULL) delete [] Limiter;
@@ -279,6 +290,21 @@ void CVariable::SetSolution_Old(su2double *val_solution_old) {
 		Solution_Old[iVar] = val_solution_old[iVar];
   
 }
+
+void CVariable::SetSolution_Old_tn(su2double *val_solution_old_tn) {
+
+	for (unsigned short iVar = 0; iVar < nVar; iVar++)
+		Solution_Old_tn[iVar] = val_solution_old_tn[iVar];
+
+}
+
+void CVariable::SetHBSource(su2double *val_HB_source) {
+
+  for (unsigned short iVar = 0; iVar < nVar; iVar++)
+    HBSource[iVar] = val_HB_source[iVar];
+
+}
+
 
 void CVariable::SetSolution_time_n(su2double *val_solution_time_n) {
 

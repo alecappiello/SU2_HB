@@ -1841,6 +1841,9 @@ void CSolver::RegisterSolution(CGeometry *geometry, CConfig *config){
     node[iPoint]->RegisterSolution(input);
   }
 
+  for (iPoint = 0; iPoint < nPoint; iPoint++){
+    node[iPoint]->RegisterHB_Source(input);
+  }
 //  for (iPoint = 0; iPoint < nPoint; iPoint++){
 //    node[iPoint]->RegisterSolutionOld();
 //  }
@@ -1869,6 +1872,10 @@ void CSolver::RegisterOutput(CGeometry *geometry, CConfig *config){
 
   for (iPoint = 0; iPoint < nPoint; iPoint++){
     node[iPoint]->RegisterSolution(input);
+  }
+
+  for (iPoint = 0; iPoint < nPoint; iPoint++){
+    node[iPoint]->RegisterHB_Source(input);
   }
 }
 CBaselineSolver::CBaselineSolver(void) : CSolver() { }

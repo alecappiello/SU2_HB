@@ -55,7 +55,9 @@ class CVariable {
 protected:
 
 	su2double *Solution,		/*!< \brief Solution of the problem. */
-	*Solution_Old;			/*!< \brief Old solution of the problem R-K. */
+	*Solution_Old,			/*!< \brief Old solution of the problem R-K. */
+	*Solution_Old_tn,			/*!< \brief Old solution of the problem R-K. */
+	*HBSource;			/*!< \brief Old solution of the problem R-K. */
   bool Non_Physical;			/*!< \brief Non-physical points in the solution (force first order). */
 	su2double *Solution_time_n,	/*!< \brief Solution of the problem at time n for dual-time stepping technique. */
 	*Solution_time_n1;			/*!< \brief Solution of the problem at time n-1 for dual-time stepping technique. */
@@ -160,10 +162,28 @@ public:
 	su2double GetSolution_Old(unsigned short val_var);
 
 	/*!
+	 * \brief Get the old solution of the problem (Runge-Kutta method)
+	 * \param[in] val_var - Index of the variable.
+	 * \return Pointer to the old solution vector.
+	 */
+	su2double GetSolution_Old_tn(unsigned short val_var);
+
+	/*!
 	 * \brief Set the value of the old solution.
 	 * \param[in] val_solution_old - Pointer to the residual vector.
 	 */
 	void SetSolution_Old(su2double *val_solution_old);
+
+	/*!
+	 * \brief Set the value of the old solution.
+	 * \param[in] val_solution_old - Pointer to the residual vector.
+	 */
+	void SetSolution_Old_tn(su2double *val_solution_old_tn);
+	/*!
+	 * \brief Set the value of the old solution.
+	 * \param[in] val_solution_old - Pointer to the residual vector.
+	 */
+	void SetHBSource(su2double *val_solution_old);
 
 	/*!
 	 * \overload
@@ -1785,6 +1805,15 @@ public:
 	virtual su2double GetSpectralMethod_Source(unsigned short val_var);
 
 	/*!
+	 * \brief A virtual member.
+	 */
+	virtual su2double* GetHB_Source(void);
+
+	/*!
+	 * \brief A virtual member.
+	 */
+        virtual void RegisterHB_Source(bool input);
+	/*!
 	 * \brief Set the Eddy Viscosity Sensitivity of the problem.
 	 * \param[in] val_EddyViscSens - Eddy Viscosity Sensitivity.
 	 * \param[in] numTotalVar - Number of variables.
@@ -1813,6 +1842,18 @@ public:
  * \param[in] val_solution_old - Pointer to the residual vector.
  */
 virtual void SetSolution_DirectOld(su2double *val_solution_direct_old);
+
+	/*!
+	 * \brief A virtual member. Get the direct solution for the adjoint solver.
+	 * \return Pointer to the direct solution vector.
+	 */
+	virtual su2double *GetHBSource_Direct(void);
+
+	/*!
+	 * \brief Set the direct solution for the adjoint solver.
+	 * \param[in] val_solution_direct - Value of the direct solution.
+	 */
+	virtual void SetHBSource_Direct(su2double *val_HB_source_direct);
 /*!
  * \brief Get the old solution of the problem
  * \param[in] val_var - Index of the variable.
@@ -2051,7 +2092,7 @@ virtual su2double  *GetSolution_DirectOld(void);
   /*!
    * \brief Register the variables in the solution_time_n array as input/output variable.
    */
-  void RegisterSolutionOld();
+  void RegisterSolutionOld(bool input);
 
   /*!
    * \brief Register the variables in the solution_time_n array as input/output variable.
@@ -2070,10 +2111,22 @@ virtual su2double  *GetSolution_DirectOld(void);
   void SetAdjointSolution(su2double *adj_sol);
 
   /*!
+   * \brief Set the adjoint values of the solution.
+   * \param[in] adj_sol - The adjoint values of the solution.
+   */
+  void SetAdjointSolutionOld_tn(su2double *adj_sol);
+
+  /*!
    * \brief Get the adjoint values of the solution.
    * \param[in] adj_sol - The adjoint values of the solution.
    */
   void GetAdjointSolution(su2double *adj_sol);
+
+  /*!
+   * \brief Get the adjoint values of the solution.
+   * \param[in] adj_sol - The adjoint values of the solution.
+   */
+  void GetAdjointSolutionOld_tn(su2double *adj_sol);
 
   /*!
    * \brief Set the adjoint values of the solution at time n.
@@ -2206,6 +2259,7 @@ class CWaveVariable : public CVariable {
 protected:
 	su2double *Solution_Direct;  /*!< \brief Direct solution container for use in the adjoint wave solver. */
 	su2double *Solution_Direct_Old;  /*!< \brief Direct solution container for use in the adjoint wave solver. */
+	su2double *HB_Source_Direct;  /*!< \brief Direct solution container for use in the adjoint wave solver. */
 
 public:
 
@@ -2239,11 +2293,23 @@ public:
 	 * \return Pointer to the direct solution vector.
 	 */
 	su2double *GetSolution_Direct(void);
+
+	/*!
+	 * \brief Get the direct solution for the adjoint solver.
+	 * \return Pointer to the direct solution vector.
+	 */
+	su2double *GetHBSource_Direct(void);
 	/*!
 	 * \brief Set the direct solution for the adjoint solver.
 	 * \param[in] val_solution_direct - Value of the direct solution.
 	 */
 	void SetSolution_DirectOld(su2double *val_solution_direct_old);
+
+	/*!
+	 * \brief Set the direct solution for the adjoint solver.
+	 * \param[in] val_solution_direct - Value of the direct solution.
+	 */
+	void SetHBSource_Direct(su2double *val_HB_source_direct);
 
 	/*!
 	 * \brief Get the direct solution for the adjoint solver.
@@ -2264,6 +2330,7 @@ class CHeatVariable : public CVariable {
 protected:
 	su2double *Solution_Direct;  /*!< \brief Direct solution container for use in the adjoint Heat solver. */
 	su2double *Solution_Direct_Old;  /*!< \brief Direct solution container for use in the adjoint Heat solver. */
+	su2double * HB_Source_Direct;  /*!< \brief Direct solution container for use in the adjoint Heat solver. */
 
 public:
 
@@ -2305,10 +2372,22 @@ public:
 	void SetSolution_DirectOld(su2double *val_solution_direct_old);
 
 	/*!
+	 * \brief Set the direct solution for the adjoint solver.
+	 * \param[in] val_solution_direct - Value of the direct solution.
+	 */
+	void SetHBSource_Direct(su2double *val_HB_source_direct);
+
+	/*!
 	 * \brief Get the direct solution for the adjoint solver.
 	 * \return Pointer to the direct solution vector.
 	 */
 	su2double *GetSolution_DirectOld(void);
+
+	/*!
+	 * \brief Get the direct solution for the adjoint solver.
+	 * \return Pointer to the direct solution vector.
+	 */
+	su2double *GetHBSource_Direct(void);
 
 };
 
@@ -3215,6 +3294,17 @@ public:
 	su2double GetSpectralMethod_Source(unsigned short val_var);
 
 	/*!
+	 * \brief Get the time spectral source term.
+	 */
+	su2double* GetHB_Source(void);
+
+        /*!
+         * \brief Register the variables in the solution array as input/output variable.
+         * \param[in] input - input or output variables.
+         */
+        void RegisterHB_Source(bool input);
+
+	/*!
 	 * \brief Get the value of the preconditioner Beta.
 	 * \return Value of the low Mach preconditioner variable Beta
 	 */
@@ -3540,6 +3630,11 @@ public:
 	 */
 	su2double GetSpectralMethod_Source(unsigned short val_var);
 
+	/*!
+	 * \brief Get the time spectral source term.
+	 */
+	su2double* GetHB_Source(void);
+
 };
 
 
@@ -3586,6 +3681,11 @@ public:
 	 * \return Value of the time spectral source term for the index <i>val_var</i>.
 	 */
 	su2double GetSpectralMethod_Source(unsigned short val_var);
+
+	/*!
+	 * \brief Get the time spectral source term.
+	 */
+	su2double* GetHB_Source(void);
   
 };
 
@@ -3827,6 +3927,11 @@ public:
 	 * \return Value of the time spectral source term for the index <i>val_var</i>.
 	 */
 	su2double GetSpectralMethod_Source(unsigned short val_var);
+
+	/*!
+	 * \brief Get the time spectral source term.
+	 */
+	su2double* GetHB_Source(void);
 };
 
 /*! 
@@ -4031,6 +4136,7 @@ private:
     su2double* Sensitivity; /* Vector holding the derivative of target functional with respect to the coordinates at this node*/
     su2double* Solution_Direct;
     su2double* Solution_DirectOld;
+    su2double* HB_Source_Direct;
     su2double* DualTime_Derivative;
     su2double* DualTime_Derivative_n;
 
@@ -4080,7 +4186,11 @@ public:
 
     su2double* GetSolution_Direct();
 
+    su2double* GetHBSource_Direct();
+
     void SetSolution_DirectOld(su2double *sol_old);
+
+    void SetHBSource_Direct(su2double *source);
 
     su2double* GetSolution_DirectOld();
 };

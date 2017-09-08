@@ -143,6 +143,8 @@ inline su2double CVariable::GetSolution(unsigned short val_var) { return Solutio
 
 inline su2double CVariable::GetSolution_Old(unsigned short val_var) { return Solution_Old[val_var]; }
 
+inline su2double CVariable::GetSolution_Old_tn(unsigned short val_var) { return Solution_Old_tn[val_var]; }
+
 inline su2double *CVariable::GetResidual_Sum(void) { return Residual_Sum; }
 
 inline su2double *CVariable::GetResidual_Old(void) { return Residual_Old; }
@@ -517,15 +519,23 @@ inline void CVariable::SetmuT(su2double val_muT) { }
 
 inline su2double* CVariable::GetSolution_Direct() { return NULL; }
 
+inline su2double* CVariable::GetHBSource_Direct(void) { return NULL; }
+
 inline void CVariable::SetSolution_Direct(su2double *val_solution_direct) { }
 
 inline su2double* CVariable::GetSolution_DirectOld() { return NULL; }
 
 inline void CVariable::SetSolution_DirectOld(su2double *val_solution_direct_old) { }
 
+inline void CVariable::SetHBSource_Direct(su2double *val_HB_source_direct) { }
+
 inline void CVariable::SetSpectralMethod_Source(unsigned short val_var, su2double val_source) { }
 
 inline su2double CVariable::GetSpectralMethod_Source(unsigned short val_var) { return 0; }
+
+inline su2double* CVariable::GetHB_Source(void) { return NULL; }
+
+inline void CVariable::RegisterHB_Source(bool input) { }
 
 inline void CVariable::SetEddyViscSens(su2double *val_EddyViscSens, unsigned short numTotalVar) { }
 
@@ -750,7 +760,18 @@ inline su2double *CEulerVariable::GetLimiter_Secondary(void) { return Limiter_Se
 
 inline void CEulerVariable::SetSpectralMethod_Source(unsigned short val_var, su2double val_source) { TS_Source[val_var] = val_source; }
 
+inline void CEulerVariable::RegisterHB_Source(bool input) {
+  if (input) {
+    for (unsigned short iVar = 0; iVar < nVar; iVar++)
+      AD::RegisterInput(TS_Source[iVar]);
+  }
+  else { for (unsigned short iVar = 0; iVar < nVar; iVar++)
+      AD::RegisterOutput(TS_Source[iVar]);}
+}
+
 inline su2double CEulerVariable::GetSpectralMethod_Source(unsigned short val_var) { return TS_Source[val_var]; }
+
+inline su2double* CEulerVariable::GetHB_Source(void) { return TS_Source; }
 
 inline su2double CEulerVariable::GetPreconditioner_Beta() { return Precond_Beta; }
 
@@ -849,6 +870,8 @@ inline void CAdjEulerVariable::SetPhi_Old(su2double *val_phi) { for (unsigned sh
 inline void CAdjEulerVariable::SetSpectralMethod_Source(unsigned short val_var, su2double val_source) { TS_Source[val_var] = val_source; }
 
 inline su2double CAdjEulerVariable::GetSpectralMethod_Source(unsigned short val_var) { return TS_Source[val_var]; }
+
+inline su2double* CAdjEulerVariable::GetHB_Source(void) { return TS_Source; }
 
 inline su2double *CAdjNSVariable::GetForceProj_Vector(void) { return ForceProj_Vector; }
 
@@ -1027,9 +1050,13 @@ inline su2double* CWaveVariable::GetSolution_Direct() { return Solution_Direct;}
 
 inline su2double* CWaveVariable::GetSolution_DirectOld() { return Solution_Direct_Old;}
 
+inline su2double* CWaveVariable::GetHBSource_Direct() { return HB_Source_Direct;}
+
 inline void CWaveVariable::SetSolution_Direct(su2double *val_solution_direct) { for (unsigned short iVar = 0; iVar < nVar; iVar++) Solution_Direct[iVar] += val_solution_direct[iVar];}
 
 inline void CWaveVariable::SetSolution_DirectOld(su2double *val_solution_direct_old) { for (unsigned short iVar = 0; iVar < nVar; iVar++) Solution_Direct_Old[iVar] += val_solution_direct_old[iVar];}
+
+inline void CWaveVariable::SetHBSource_Direct(su2double *val_HB_source_direct) { for (unsigned short iVar = 0; iVar < nVar; iVar++) HB_Source_Direct[iVar] += val_HB_source_direct[iVar];}
 
 inline su2double* CPotentialVariable::GetChargeDensity() { return Charge_Density;}
 
@@ -1039,18 +1066,26 @@ inline su2double* CHeatVariable::GetSolution_Direct() { return Solution_Direct;}
 
 inline su2double* CHeatVariable::GetSolution_DirectOld() { return Solution_Direct_Old;}
 
+inline su2double* CHeatVariable::GetHBSource_Direct() { return HB_Source_Direct;}
+
 inline void CHeatVariable::SetSolution_Direct(su2double *val_solution_direct) { for (unsigned short iVar = 0; iVar < nVar; iVar++) Solution_Direct[iVar] += val_solution_direct[iVar];}
 
 inline void CHeatVariable::SetSolution_DirectOld(su2double *val_solution_direct_old) { for (unsigned short iVar = 0; iVar < nVar; iVar++) Solution_Direct_Old[iVar] += val_solution_direct_old[iVar];}
+
+inline void CHeatVariable::SetHBSource_Direct(su2double *val_HB_source_direct) { for (unsigned short iVar = 0; iVar < nVar; iVar++) HB_Source_Direct[iVar] += val_HB_source_direct[iVar];}
 
 inline void CTurbSAVariable::SetSpectralMethod_Source(unsigned short val_var, su2double val_source) { TS_Source[val_var] = val_source; }
 
 inline su2double CTurbSAVariable::GetSpectralMethod_Source(unsigned short val_var) { return TS_Source[val_var]; }
 
+inline su2double* CTurbSAVariable::GetHB_Source(void) { return TS_Source; }
+
 
 inline void CTurbMLVariable::SetSpectralMethod_Source(unsigned short val_var, su2double val_source) { TS_Source[val_var] = val_source; }
 
 inline su2double CTurbMLVariable::GetSpectralMethod_Source(unsigned short val_var) { return TS_Source[val_var]; }
+
+inline su2double* CTurbMLVariable::GetHB_Source(void) { return TS_Source; }
 
 inline su2double CTurbSSTVariable::GetF1blending() { return F1; }
 
@@ -1074,9 +1109,13 @@ inline void CVariable::RegisterSolution(bool input) {
       AD::RegisterOutput(Solution[iVar]);}
 }
 
-inline void CVariable::RegisterSolutionOld(){
-  for (unsigned short iVar = 0; iVar < nVar; iVar++)
-    AD::RegisterInput(Solution_Old[iVar]);
+inline void CVariable::RegisterSolutionOld(bool input) {
+  if (input) {
+    for (unsigned short iVar = 0; iVar < nVar; iVar++)
+      AD::RegisterInput(Solution_Old_tn[iVar]);
+  }
+  else { for (unsigned short iVar = 0; iVar < nVar; iVar++)
+      AD::RegisterOutput(Solution_Old_tn[iVar]);}
 }
 
 inline void CVariable::RegisterSolution_time_n(){
@@ -1098,6 +1137,17 @@ inline void CVariable::SetAdjointSolution(su2double *adj_sol){
 inline void CVariable::GetAdjointSolution(su2double *adj_sol){
     for (unsigned short iVar = 0; iVar < nVar; iVar++){
         adj_sol[iVar] = SU2_TYPE::GetDerivative(Solution[iVar]);
+    }
+}
+
+inline void CVariable::SetAdjointSolutionOld_tn(su2double *adj_sol){
+    for (unsigned short iVar = 0; iVar < nVar; iVar++)
+        SU2_TYPE::SetDerivative(Solution_Old_tn[iVar], SU2_TYPE::GetValue(adj_sol[iVar]));
+}
+
+inline void CVariable::GetAdjointSolutionOld_tn(su2double *adj_sol){
+    for (unsigned short iVar = 0; iVar < nVar; iVar++){
+        adj_sol[iVar] = SU2_TYPE::GetDerivative(Solution_Old_tn[iVar]);
     }
 }
 
@@ -1150,6 +1200,8 @@ inline su2double CDiscAdjVariable::GetSensitivity(unsigned short iDim){return Se
 
 inline su2double* CDiscAdjVariable::GetSolution_Direct() { return Solution_Direct; }
 
+inline su2double* CDiscAdjVariable::GetHBSource_Direct() { return HB_Source_Direct; }
+
 inline void CDiscAdjVariable::SetSolution_Direct(su2double *val_solution_direct) {
   for (unsigned short iVar = 0; iVar < nVar; iVar++){
     Solution_Direct[iVar] = val_solution_direct[iVar];
@@ -1160,5 +1212,11 @@ inline su2double* CDiscAdjVariable::GetSolution_DirectOld() { return Solution_Di
 inline void CDiscAdjVariable::SetSolution_DirectOld(su2double *val_solution_direct_old) {
   for (unsigned short iVar = 0; iVar < nVar; iVar++){
     Solution_DirectOld[iVar] = val_solution_direct_old[iVar];
+  }
+}
+
+inline void CDiscAdjVariable::SetHBSource_Direct(su2double *val_HB_source_direct) {
+  for (unsigned short iVar = 0; iVar < nVar; iVar++){
+    HB_Source_Direct[iVar] = val_HB_source_direct[iVar];
   }
 }

@@ -101,8 +101,12 @@ CDiscAdjSolver::CDiscAdjSolver(CGeometry *geometry, CConfig *config, CSolver *di
   /*--- Define some auxiliary vectors related to the solution ---*/
 
   Solution   = new su2double[nVar];
-
   for (iVar = 0; iVar < nVar; iVar++) Solution[iVar]   = 1e-16;
+
+  Source   = new su2double[nVar];
+  for (iVar = 0; iVar < nVar; iVar++) Source[iVar]   = 1e-16;
+
+
 
   /*--- Sensitivity definition and coefficient in all the markers ---*/
 
@@ -228,6 +232,10 @@ CDiscAdjSolver::CDiscAdjSolver(CGeometry *geometry, CConfig *config, CSolver *di
   for (iPoint = 0; iPoint < nPoint; iPoint++){
     node[iPoint]->SetSolution_Direct(direct_solver->node[iPoint]->GetSolution());
   }
+
+//  for (iPoint = 0; iPoint < nPoint; iPoint++){
+//    node[iPoint]->SetHBSource_Direct(direct_solver->node[iPoint]->GetHB_Source());
+//  }
 }
 
 CDiscAdjSolver::~CDiscAdjSolver(void){ 
@@ -265,15 +273,14 @@ void CDiscAdjSolver::SetRecording(CGeometry* geometry, CConfig *config){
     direct_solver->node[iPoint]->SetSolution(node[iPoint]->GetSolution_Direct());
   }
 
+//  for (iPoint = 0; iPoint < nPoint; iPoint++){
+//    direct_solver->node[iPoint]->SetHBSource(node[iPoint]->GetHBSource_Direct());
+//  }
+
   for (iPoint = 0; iPoint < nPoint; iPoint++){
     direct_solver->node[iPoint]->SetSolution_Old(node[iPoint]->GetSolution_DirectOld());
   }
 
-//  for (iPoint = 0; iPoint < nPoint; iPoint++){
-//    for (iVar = 0; iVar < nVar; iVar++){
-//      AD::ResetInput(direct_solver->node[iPoint]->GetSolution_DirectOld()[iVar]);
-//    }
-//  }
 
   if (time_n1_needed){
     for (iPoint = 0; iPoint < nPoint; iPoint++){
@@ -307,9 +314,15 @@ void CDiscAdjSolver::RegisterSolution(CGeometry *geometry, CConfig *config){
   for (iPoint = 0; iPoint < nPoint; iPoint++){
     direct_solver->node[iPoint]->RegisterSolution(input);
   }
+
+  for (iPoint = 0; iPoint < nPoint; iPoint++){
+    direct_solver->node[iPoint]->RegisterSolutionOld(input);
+  }
+
 //  for (iPoint = 0; iPoint < nPoint; iPoint++){
-//    direct_solver->node[iPoint]->RegisterSolutionOld();
+//    direct_solver->node[iPoint]->RegisterHB_Source(input);
 //  }
+
 
   if (time_n_needed){
     for (iPoint = 0; iPoint < nPoint; iPoint++){
@@ -386,6 +399,14 @@ void CDiscAdjSolver::RegisterOutput(CGeometry *geometry, CConfig *config){
   for (iPoint = 0; iPoint < nPoint; iPoint++){
     direct_solver->node[iPoint]->RegisterSolution(input);
   }
+
+  for (iPoint = 0; iPoint < nPoint; iPoint++){
+    direct_solver->node[iPoint]->RegisterSolutionOld(input);
+  }
+
+//  for (iPoint = 0; iPoint < nPoint; iPoint++){
+//    direct_solver->node[iPoint]->RegisterHB_Source(input);
+//  }
 }
 
 
@@ -535,12 +556,16 @@ void CDiscAdjSolver::ExtractAdjoint_Solution(CGeometry *geometry, CConfig *confi
     node[iPoint]->Set_OldSolution();
 
     /*--- Extract the adjoint solution ---*/
-
     direct_solver->node[iPoint]->GetAdjointSolution(Solution);
 
     /*--- Store the adjoint solution ---*/
-
     node[iPoint]->SetSolution(Solution);
+
+    /*--- Extract the adjoint solution ---*/
+    direct_solver->node[iPoint]->GetAdjointSolutionOld_tn(Solution);
+
+    /*--- Store the adjoint solution ---*/
+    node[iPoint]->SetSolution_Old_tn(Solution);
   }
 
   if (time_n_needed){
@@ -628,6 +653,18 @@ void CDiscAdjSolver::SetAdjoint_Output(CGeometry *geometry, CConfig *config){
       }
     }
     direct_solver->node[iPoint]->SetAdjointSolution(Solution);
+  }
+
+  for (iPoint = 0; iPoint < nPoint; iPoint++){
+    for (iVar = 0; iVar < nVar; iVar++){
+      Solution[iVar] = node[iPoint]->GetSolution_Old_tn(iVar);
+    }
+    if (dual_time){
+      for (iVar = 0; iVar < nVar; iVar++){
+        Solution[iVar] += node[iPoint]->GetDual_Time_Derivative(iVar);
+      }
+    }
+    direct_solver->node[iPoint]->SetAdjointSolutionOld_tn(Solution);
   }
 }
 
