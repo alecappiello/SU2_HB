@@ -1220,3 +1220,31 @@ inline void CDiscAdjVariable::SetHBSource_Direct(su2double *val_HB_source_direct
     HB_Source_Direct[iVar] = val_HB_source_direct[iVar];
   }
 }
+inline void CVariable::SetAdjoint_HB_Source(su2double* adj_hb){}
+
+inline void CVariable::GetAdjoint_HB_Source(su2double* adj_hb){}
+
+inline void CEulerVariable::SetAdjoint_HB_Source(su2double* adj_hb){
+  for (unsigned short iVar = 0; iVar < nVar; iVar++){
+    SU2_TYPE::SetDerivative(TS_Source[iVar], SU2_TYPE::GetValue(adj_hb[iVar]));
+  }
+}
+
+inline void CEulerVariable::GetAdjoint_HB_Source(su2double* adj_hb){
+  for (unsigned short iVar = 0; iVar < nVar; iVar++){
+    adj_hb[iVar] = SU2_TYPE::GetDerivative(TS_Source[iVar]);
+  }
+}
+
+inline void CDiscAdjVariable::SetAdjoint_HB_Source(su2double* adj_hb){
+  for (unsigned short iVar = 0; iVar < nVar; iVar++){
+    Adjoint_HB_Source[iVar] = adj_hb[iVar];
+  }
+}
+
+inline void CDiscAdjVariable::GetAdjoint_HB_Source(su2double* adj_hb){
+  for (unsigned short iVar = 0; iVar < nVar; iVar++){
+    adj_hb[iVar] = Adjoint_HB_Source[iVar];
+  }
+}
+

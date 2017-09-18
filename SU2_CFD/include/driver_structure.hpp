@@ -271,6 +271,9 @@ public:
    * \brief Perform a mesh deformation as initial condition.
    */
   virtual void SetInitialMesh() { };
+  
+  virtual void SetSpectralMethod(unsigned short iZone) { };
+  
 
   /*--- External communication layer ---*/
   su2double Get_Drag();

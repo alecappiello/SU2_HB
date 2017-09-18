@@ -56,7 +56,8 @@ CDiscAdjVariable::CDiscAdjVariable(su2double* val_solution, unsigned short val_n
   HB_Source_Direct = NULL;
   Solution_DirectOld = NULL;
   Sensitivity    = NULL;
-
+  Adjoint_HB_Source = NULL;
+  
   DualTime_Derivative   = NULL;
   DualTime_Derivative_n = NULL;
 
@@ -88,6 +89,12 @@ CDiscAdjVariable::CDiscAdjVariable(su2double* val_solution, unsigned short val_n
       Solution_time_n1[iVar] = 0.0;
       DualTime_Derivative[iVar] = 0.0;
       DualTime_Derivative_n[iVar] = 0.0;
+    }
+  }
+  if (config->GetUnsteady_Simulation() == TIME_SPECTRAL){
+    Adjoint_HB_Source = new su2double[iVar];
+    for (iVar = 0; iVar < nVar; iVar++){
+      Adjoint_HB_Source[iVar] = 0.0;
     }
   }
 }

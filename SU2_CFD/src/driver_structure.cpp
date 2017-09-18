@@ -383,7 +383,16 @@ CDriver::CDriver(char* confFile,
 #else
   StartTime = MPI_Wtime();
 #endif
-
+  
+  if (config_container[ZONE_0]->GetUnsteady_Simulation()== TIME_SPECTRAL){
+    for (iZone =0; iZone < nZone; iZone++){
+      SetSpectralMethod(iZone);
+      if (config_container[ZONE_0]->GetDiscrete_Adjoint()){
+        for (unsigned long iPoint = 0; iPoint < geometry_container[ZONE_0][MESH_0]->GetnPoint(); iPoint++)
+          solver_container[iZone][MESH_0][ADJFLOW_SOL]->node[iPoint]->SetHBSource_Direct( solver_container[iZone][MESH_0][FLOW_SOL]->node[iPoint]->GetHB_Source());
+      }
+    }
+  }
 }
 
 void CDriver::Postprocessing(){
@@ -4646,8 +4655,6 @@ void CDiscAdjSpectralDriver::SetRecording(unsigned short kind_recording){
     for (iZone = 0; iZone < nZone; iZone++)
       direct_iteration[iZone]->SetGrid_Movement(geometry_container, surface_movement, grid_movement, FFDBox, solver_container, config_container, iZone, 0, 0, false);
 //  }
-  for (iZone = 0; iZone < nZone; iZone++)
-    SetSpectralMethod(iZone);
 
 
   for (iZone = 0; iZone < nZone; iZone++)
@@ -4667,6 +4674,8 @@ void CDiscAdjSpectralDriver::SetRecording(unsigned short kind_recording){
 //      output->OneDimensionalOutput(solver_container[iZone][MESH_0][FLOW_SOL],
 //                                   geometry_container[iZone][MESH_0], config_container[iZone]);
 
+  for (iZone = 0; iZone < nZone; iZone++)
+    SetSpectralMethod(iZone);
 
   /* --- Set turboperformance for multi-zone ---*/
   if(config_container[ZONE_0]->GetBoolTurbomachinery()){

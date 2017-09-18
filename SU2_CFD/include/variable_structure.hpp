@@ -2173,6 +2173,11 @@ virtual su2double  *GetSolution_DirectOld(void);
   virtual su2double GetDual_Time_Derivative(unsigned short iVar);
 
   virtual su2double GetDual_Time_Derivative_n(unsigned short iVar);
+  
+  virtual void SetAdjoint_HB_Source(su2double *adj_hb);
+  
+  virtual void GetAdjoint_HB_Source(su2double* adj_hb);
+  
 };
 
 /*!
@@ -3339,6 +3344,12 @@ public:
 	 * \param[in] Value of the derivatives of the wind gust
 	 */
 	void SetWindGustDer(su2double* val_WindGust);
+  
+  void SetAdjoint_HB_Source(su2double *adj_hb);
+  
+  void GetAdjoint_HB_Source(su2double* adj_hb);
+  
+  
 };
 
 /*! 
@@ -4139,6 +4150,7 @@ private:
     su2double* HB_Source_Direct;
     su2double* DualTime_Derivative;
     su2double* DualTime_Derivative_n;
+    su2double* Adjoint_HB_Source;
 
 public:
     /*!
@@ -4193,6 +4205,10 @@ public:
     void SetHBSource_Direct(su2double *source);
 
     su2double* GetSolution_DirectOld();
+    
+    void GetAdjoint_HB_Source(su2double* adj_hb);
+    
+    void SetAdjoint_HB_Source(su2double* adj_hb);
 };
 
 

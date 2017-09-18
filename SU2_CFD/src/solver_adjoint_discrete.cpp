@@ -233,9 +233,9 @@ CDiscAdjSolver::CDiscAdjSolver(CGeometry *geometry, CConfig *config, CSolver *di
     node[iPoint]->SetSolution_Direct(direct_solver->node[iPoint]->GetSolution());
   }
 
-//  for (iPoint = 0; iPoint < nPoint; iPoint++){
-//    node[iPoint]->SetHBSource_Direct(direct_solver->node[iPoint]->GetHB_Source());
-//  }
+  for (iPoint = 0; iPoint < nPoint; iPoint++){
+    node[iPoint]->SetHBSource_Direct(direct_solver->node[iPoint]->GetHB_Source());
+  }
 }
 
 CDiscAdjSolver::~CDiscAdjSolver(void){ 
@@ -315,13 +315,13 @@ void CDiscAdjSolver::RegisterSolution(CGeometry *geometry, CConfig *config){
     direct_solver->node[iPoint]->RegisterSolution(input);
   }
 
-  for (iPoint = 0; iPoint < nPoint; iPoint++){
-    direct_solver->node[iPoint]->RegisterSolutionOld(input);
-  }
-
 //  for (iPoint = 0; iPoint < nPoint; iPoint++){
-//    direct_solver->node[iPoint]->RegisterHB_Source(input);
+//    direct_solver->node[iPoint]->RegisterSolutionOld(input);
 //  }
+
+  for (iPoint = 0; iPoint < nPoint; iPoint++){
+    direct_solver->node[iPoint]->RegisterHB_Source(input);
+  }
 
 
   if (time_n_needed){
@@ -401,12 +401,8 @@ void CDiscAdjSolver::RegisterOutput(CGeometry *geometry, CConfig *config){
   }
 
   for (iPoint = 0; iPoint < nPoint; iPoint++){
-    direct_solver->node[iPoint]->RegisterSolutionOld(input);
+    direct_solver->node[iPoint]->RegisterHB_Source(input);
   }
-
-//  for (iPoint = 0; iPoint < nPoint; iPoint++){
-//    direct_solver->node[iPoint]->RegisterHB_Source(input);
-//  }
 }
 
 
@@ -560,12 +556,19 @@ void CDiscAdjSolver::ExtractAdjoint_Solution(CGeometry *geometry, CConfig *confi
 
     /*--- Store the adjoint solution ---*/
     node[iPoint]->SetSolution(Solution);
-
-    /*--- Extract the adjoint solution ---*/
-    direct_solver->node[iPoint]->GetAdjointSolutionOld_tn(Solution);
-
-    /*--- Store the adjoint solution ---*/
-    node[iPoint]->SetSolution_Old_tn(Solution);
+    
+  }
+  
+  if (config->GetUnsteady_Simulation() == TIME_SPECTRAL){
+    for (iPoint = 0; iPoint < nPoint; iPoint++){
+      
+      /*--- Extract the adjoint solution ---*/
+      direct_solver->node[iPoint]->GetAdjoint_HB_Source(Solution);
+      
+      /*--- Store the adjoint solution ---*/
+      node[iPoint]->SetAdjoint_HB_Source(Solution);
+      
+    }
   }
 
   if (time_n_needed){
@@ -654,18 +657,15 @@ void CDiscAdjSolver::SetAdjoint_Output(CGeometry *geometry, CConfig *config){
     }
     direct_solver->node[iPoint]->SetAdjointSolution(Solution);
   }
-
-  for (iPoint = 0; iPoint < nPoint; iPoint++){
-    for (iVar = 0; iVar < nVar; iVar++){
-      Solution[iVar] = node[iPoint]->GetSolution_Old_tn(iVar);
+  
+  if (config->GetUnsteady_Simulation() == TIME_SPECTRAL){
+    for (iPoint = 0; iPoint < nPoint; iPoint++){
+      node[iPoint]->GetAdjoint_HB_Source(Solution);
+      
+      direct_solver->node[iPoint]->SetAdjoint_HB_Source(Solution);
     }
-    if (dual_time){
-      for (iVar = 0; iVar < nVar; iVar++){
-        Solution[iVar] += node[iPoint]->GetDual_Time_Derivative(iVar);
-      }
-    }
-    direct_solver->node[iPoint]->SetAdjointSolutionOld_tn(Solution);
   }
+
 }
 
 void CDiscAdjSolver::SetSensitivity(CGeometry *geometry, CConfig *config){
