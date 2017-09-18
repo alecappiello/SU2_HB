@@ -91,7 +91,7 @@ CDiscAdjVariable::CDiscAdjVariable(su2double* val_solution, unsigned short val_n
       DualTime_Derivative_n[iVar] = 0.0;
     }
   }
-  if (config->GetUnsteady_Simulation() == TIME_SPECTRAL){
+  if (config->GetUnsteady_Simulation() == SPECTRAL_METHOD){
     Adjoint_HB_Source = new su2double[iVar];
     for (iVar = 0; iVar < nVar; iVar++){
       Adjoint_HB_Source[iVar] = 0.0;

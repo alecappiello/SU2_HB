@@ -384,7 +384,7 @@ CDriver::CDriver(char* confFile,
   StartTime = MPI_Wtime();
 #endif
   
-  if (config_container[ZONE_0]->GetUnsteady_Simulation()== TIME_SPECTRAL){
+  if (config_container[ZONE_0]->GetUnsteady_Simulation()== SPECTRAL_METHOD){
     for (iZone =0; iZone < nZone; iZone++){
       SetSpectralMethod(iZone);
       if (config_container[ZONE_0]->GetDiscrete_Adjoint()){

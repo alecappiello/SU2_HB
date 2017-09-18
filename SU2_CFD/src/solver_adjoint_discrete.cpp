@@ -559,7 +559,7 @@ void CDiscAdjSolver::ExtractAdjoint_Solution(CGeometry *geometry, CConfig *confi
     
   }
   
-  if (config->GetUnsteady_Simulation() == TIME_SPECTRAL){
+  if (config->GetUnsteady_Simulation() == SPECTRAL_METHOD){
     for (iPoint = 0; iPoint < nPoint; iPoint++){
       
       /*--- Extract the adjoint solution ---*/
@@ -658,7 +658,7 @@ void CDiscAdjSolver::SetAdjoint_Output(CGeometry *geometry, CConfig *config){
     direct_solver->node[iPoint]->SetAdjointSolution(Solution);
   }
   
-  if (config->GetUnsteady_Simulation() == TIME_SPECTRAL){
+  if (config->GetUnsteady_Simulation() == SPECTRAL_METHOD){
     for (iPoint = 0; iPoint < nPoint; iPoint++){
       node[iPoint]->GetAdjoint_HB_Source(Solution);
       
