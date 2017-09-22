@@ -2837,61 +2837,90 @@ void CTurbSSTSolver::Postprocessing(CGeometry *geometry, CSolver **solver_contai
 }
 
 void CTurbSSTSolver::Source_Residual(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CNumerics *second_numerics, CConfig *config, unsigned short iMesh) {
-  
+
   unsigned long iPoint;
-  
+  bool spectral_method = (config->GetUnsteady_Simulation() == SPECTRAL_METHOD);
+
   for (iPoint = 0; iPoint < nPointDomain; iPoint++) {
-    
+
     /*--- Conservative variables w/o reconstruction ---*/
-    
+
     numerics->SetPrimitive(solver_container[FLOW_SOL]->node[iPoint]->GetPrimitive(), NULL);
-    
+
     /*--- Gradient of the primitive and conservative variables ---*/
-    
+
     numerics->SetPrimVarGradient(solver_container[FLOW_SOL]->node[iPoint]->GetGradient_Primitive(), NULL);
-    
+
     /*--- Turbulent variables w/o reconstruction, and its gradient ---*/
-    
+
     numerics->SetTurbVar(node[iPoint]->GetSolution(), NULL);
     numerics->SetTurbVarGradient(node[iPoint]->GetGradient(), NULL);
-    
+
     /*--- Set volume ---*/
-    
+
     numerics->SetVolume(geometry->node[iPoint]->GetVolume());
-    
+
     /*--- Set distance to the surface ---*/
-    
+
     numerics->SetDistance(geometry->node[iPoint]->GetWall_Distance(), 0.0);
-    
+
     /*--- Menter's first blending function ---*/
-    
+
     numerics->SetF1blending(node[iPoint]->GetF1blending(),0.0);
-    
+
     /*--- Menter's second blending function ---*/
-    
+
     numerics->SetF2blending(node[iPoint]->GetF2blending(),0.0);
-    
+
     /*--- Set vorticity and strain rate magnitude ---*/
-    
+
     numerics->SetVorticity(solver_container[FLOW_SOL]->node[iPoint]->GetVorticity(), NULL);
-    
+
     numerics->SetStrainMag(solver_container[FLOW_SOL]->node[iPoint]->GetStrainMag(), 0.0);
-    
+
     /*--- Cross diffusion ---*/
-    
+
     numerics->SetCrossDiff(node[iPoint]->GetCrossDiff(),0.0);
-    
+
     /*--- Compute the source term ---*/
-    
+
     numerics->ComputeResidual(Residual, Jacobian_i, NULL, config);
-    
+
     /*--- Subtract residual and the Jacobian ---*/
-    
+
     LinSysRes.SubtractBlock(iPoint, Residual);
     Jacobian.SubtractBlock(iPoint, iPoint, Jacobian_i);
-    
+
+    if (spectral_method) {
+
+      su2double Volume, Source;
+      unsigned short nVar_Turb = solver_container[TURB_SOL]->GetnVar();
+
+      /*--- Loop over points ---*/
+
+      for (iPoint = 0; iPoint < nPointDomain; iPoint++) {
+
+        /*--- Get control volume ---*/
+
+        Volume = geometry->node[iPoint]->GetVolume();
+
+        /*--- Access stored time spectral source term ---*/
+
+        for (unsigned short iVar = 0; iVar < nVar_Turb; iVar++) {
+          Source = node[iPoint]->GetSpectralMethod_Source(iVar);
+          Source = node[iPoint]->GetHB_Source()[iVar];
+          Residual[iVar] = Source*Volume;
+        }
+
+        /*--- Add Residual ---*/
+
+        LinSysRes.AddBlock(iPoint, Residual);
+
+      }
+    }
+
   }
-  
+
 }
 
 void CTurbSSTSolver::Source_Template(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics,

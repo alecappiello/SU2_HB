@@ -2187,11 +2187,6 @@ void CVolumetricMovement::Rigid_Pitching(CGeometry *geometry, CConfig *config, u
 	dpsi   = -Ampl[2]*(sin(Omega[2]*time_new + Phase[2]) - sin(Omega[2]*time_old + Phase[2]));
 
 
-if(reset){
-  dtheta = -dtheta;
-  dphi = -dphi;
-  dpsi = -dpsi;
-}
 
   
   /*--- Angular velocity at the new time ---*/
@@ -2215,6 +2210,11 @@ if(reset){
 //    alphaDot[1] = -Omega[1]*Ampl[1]*cos(Omega[1]*time_new) -Omega2[1]*Ampl2[1]*cos(Omega2[1]*time_new);
 //    alphaDot[2] = -Omega[2]*Ampl[2]*cos(Omega[2]*time_new) -Omega2[2]*Ampl2[2]*cos(Omega2[2]*time_new);
 
+if(reset){
+  dtheta = -dtheta;
+  dphi = -dphi;
+  dpsi = -dpsi;
+}
   if (rank == MASTER_NODE && iter == 0) {
       cout << " Pitching frequency: (" << Omega[0] << ", " << Omega[1];
       cout << ", " << Omega[2] << ") rad/s." << endl;

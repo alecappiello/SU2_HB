@@ -3815,6 +3815,11 @@ public:
 	 * \brief Get the value of the cross diffusion of tke and omega.
 	 */
 	su2double GetCrossDiff(void);
+
+	/*!
+	 * \brief Get the time spectral source term.
+	 */
+	su2double* GetHB_Source(void);
 };
 
 

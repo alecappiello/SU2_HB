@@ -390,6 +390,10 @@ CDriver::CDriver(char* confFile,
       if (config_container[ZONE_0]->GetDiscrete_Adjoint()){
         for (unsigned long iPoint = 0; iPoint < geometry_container[ZONE_0][MESH_0]->GetnPoint(); iPoint++)
           solver_container[iZone][MESH_0][ADJFLOW_SOL]->node[iPoint]->SetHBSource_Direct( solver_container[iZone][MESH_0][FLOW_SOL]->node[iPoint]->GetHB_Source());
+        if (config_container[ZONE_0]->GetKind_Solver() == RANS){
+          for (unsigned long iPoint = 0; iPoint < geometry_container[ZONE_0][MESH_0]->GetnPoint(); iPoint++)
+            solver_container[iZone][MESH_0][ADJTURB_SOL]->node[iPoint]->SetHBSource_Direct( solver_container[iZone][MESH_0][TURB_SOL]->node[iPoint]->GetHB_Source());
+        }
       }
     }
   }
@@ -3579,8 +3583,6 @@ MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 #endif
 
     /*--- Update the spectral source terms across all zones ---*/
-  for (iZone = 0; iZone < nZone; iZone++)
-    SetSpectralMethod(iZone);
 
 	/*--- Run a single iteration of a spectral method problem. Preprocess all
    all zones before beginning the iteration. ---*/
@@ -3594,6 +3596,8 @@ MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 		iteration_container[iZone]->Iterate(output, integration_container, geometry_container,
 				solver_container, numerics_container, config_container,
 				surface_movement, grid_movement, FFDBox, iZone);
+  for (iZone = 0; iZone < nZone; iZone++)
+    SetSpectralMethod(iZone);
 
 	for (iZone = 0; iZone < nZone; iZone++){
 		if(config_container[iZone]->GetBoolTurbomachinery()){
@@ -3603,25 +3607,25 @@ MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 		}
 	}
 
-for (iZone = 0; iZone < nZone; iZone++) {
-
-  //    if ((rank == MASTER_NODE) && (kind_recording == SOLUTION) && (config_container[iZone]->GetExtIter() == 0)){
-  if (rank == MASTER_NODE){
-    cout << endl << "Convergence of direct solver for Zone " << iZone << ": " << endl;
-
-    cout << "  log10[RMS Density]: "<< log10(solver_container[iZone][MESH_0][FLOW_SOL]->GetRes_RMS(0))
-               <<", Drag: " <<solver_container[iZone][MESH_0][FLOW_SOL]->GetTotal_CDrag()
-               <<", Lift: " << solver_container[iZone][MESH_0][FLOW_SOL]->GetTotal_CLift() << "." << endl;
-
-    if (config_container[iZone]->GetKind_Turb_Model() != NONE){
-      cout << "  log10[RMS k]:       " << log10(solver_container[iZone][MESH_0][TURB_SOL]->GetRes_RMS(0)) << endl;
-      if (config_container[iZone]->GetKind_Turb_Model() == SST){
-        cout << "  log10[RMS omega]:   " << log10(solver_container[iZone][MESH_0][TURB_SOL]->GetRes_RMS(1)) << endl;
-      }
-    }
-    cout << "Entropy Gen: " << solver_container[iZone][MESH_0][FLOW_SOL]->GetEntropyGen(config_container[iZone]->GetnMarker_TurboPerformance() - 1) << endl;
-  }
-}
+//for (iZone = 0; iZone < nZone; iZone++) {
+//
+//  //    if ((rank == MASTER_NODE) && (kind_recording == SOLUTION) && (config_container[iZone]->GetExtIter() == 0)){
+//  if (rank == MASTER_NODE){
+//    cout << endl << "Convergence of direct solver for Zone " << iZone << ": " << endl;
+//
+//    cout << "  log10[RMS Density]: "<< log10(solver_container[iZone][MESH_0][FLOW_SOL]->GetRes_RMS(0))
+//               <<", Drag: " <<solver_container[iZone][MESH_0][FLOW_SOL]->GetTotal_CDrag()
+//               <<", Lift: " << solver_container[iZone][MESH_0][FLOW_SOL]->GetTotal_CLift() << "." << endl;
+//
+//    if (config_container[iZone]->GetKind_Turb_Model() != NONE){
+//      cout << "  log10[RMS k]:       " << log10(solver_container[iZone][MESH_0][TURB_SOL]->GetRes_RMS(0)) << endl;
+//      if (config_container[iZone]->GetKind_Turb_Model() == SST){
+//        cout << "  log10[RMS omega]:   " << log10(solver_container[iZone][MESH_0][TURB_SOL]->GetRes_RMS(1)) << endl;
+//      }
+//    }
+//    cout << "Entropy Gen: " << solver_container[iZone][MESH_0][FLOW_SOL]->GetEntropyGen(config_container[iZone]->GetnMarker_TurboPerformance() - 1) << endl;
+//  }
+//}
 
 	SetSpectralAverage();
 
@@ -4465,8 +4469,8 @@ void CSpectralDriver::SetSpectralAverage(){
 	  }
 	  avg_CDrag /= nZone;
        
-//        for (unsigned short iZone = 0; iZone < nZone; iZone++)
-//	  solver_container[iZone][MESH_0][FLOW_SOL]->SetTotal_CDrag(avg_CDrag);
+        for (unsigned short iZone = 0; iZone < nZone; iZone++)
+	  solver_container[iZone][MESH_0][FLOW_SOL]->SetTotal_CDrag(avg_CDrag);
 
 	switch (config_container[ZONE_0]->GetKind_SpectralAverage()) {
 	case ARITHMETIC_MEAN:
