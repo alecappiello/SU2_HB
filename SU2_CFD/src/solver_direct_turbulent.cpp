@@ -2890,6 +2890,7 @@ void CTurbSSTSolver::Source_Residual(CGeometry *geometry, CSolver **solver_conta
 
     LinSysRes.SubtractBlock(iPoint, Residual);
     Jacobian.SubtractBlock(iPoint, iPoint, Jacobian_i);
+  }
 
     if (spectral_method) {
 
@@ -2919,7 +2920,6 @@ void CTurbSSTSolver::Source_Residual(CGeometry *geometry, CSolver **solver_conta
       }
     }
 
-  }
 
 }
 
