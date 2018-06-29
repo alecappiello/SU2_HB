@@ -352,20 +352,19 @@ CLookUpTable::CLookUpTable(CConfig *config, bool dimensional) :
 	rhoT_map[0] = CTrapezoidalMap(ThermoTables_Density[0],
 			ThermoTables_Temperature[0], Table_Zone_Edges[0],
 			Table_Edge_To_Face_Connectivity[0]);
-	;
 	rhoT_map[1] = CTrapezoidalMap(ThermoTables_Density[1],
 			ThermoTables_Temperature[1], Table_Zone_Edges[1],
 			Table_Edge_To_Face_Connectivity[1]);
-	;
 
-	if (rank == MASTER_NODE) {
-		cout << "Building trapezoidal map for PT (in vapor region only)..." << endl;
-	}
-	PT_map[SinglePhaseZone] = CTrapezoidalMap(ThermoTables_Pressure[SinglePhaseZone],
-			ThermoTables_Temperature[SinglePhaseZone], Table_Zone_Edges[SinglePhaseZone],
-			Table_Edge_To_Face_Connectivity[SinglePhaseZone]);
-	;
-	PT_map[1-int(SinglePhaseZone)] = PT_map[SinglePhaseZone];
+//	if (rank == MASTER_NODE) {
+//		cout << "Building trapezoidal map for PT (in vapor region only)..." << endl;
+//	}
+	PT_map[0] = CTrapezoidalMap(ThermoTables_Pressure[0],
+			ThermoTables_Temperature[0], Table_Zone_Edges[0],
+			Table_Edge_To_Face_Connectivity[0]);
+	PT_map[1] = CTrapezoidalMap(ThermoTables_Pressure[1],
+			ThermoTables_Temperature[1], Table_Zone_Edges[1],
+			Table_Edge_To_Face_Connectivity[1]);
 
 	if (rank == MASTER_NODE) {
 		cout << "Print LUT errors? (LUT_Debug_Mode):  " << LUT_Debug_Mode << endl;
@@ -454,6 +453,12 @@ CLookUpTable::CLookUpTable(CConfig *config, bool dimensional) :
 		boundary_coords = Get_Exentded_Zone_Boundaries(ThermoTables_Density[i],
 				ThermoTables_Temperature[i]);
 		rhoT_boundary_map.push_back(CTrapezoidalMap(boundary_coords.first,
+				boundary_coords.second, Boundary_Edges[i],
+				Boundary_Edge_To_Face_Connectivity[i]));
+
+		boundary_coords = Get_Exentded_Zone_Boundaries(ThermoTables_Pressure[i],
+				ThermoTables_Temperature[i]);
+		PT_boundary_map.push_back(CTrapezoidalMap(boundary_coords.first,
 				boundary_coords.second, Boundary_Edges[i],
 				Boundary_Edge_To_Face_Connectivity[i]));
 
@@ -730,7 +735,8 @@ void CLookUpTable::SetTDState_rhoe(su2double rho, su2double e) {
 }
 
 void CLookUpTable::SetTDState_PT(su2double P, su2double T) {
-  CurrentZone = SinglePhaseZone;
+  //  CurrentZone = SinglePhaseZone;
+	Get_Current_Zone(rhoe_boundary_map,P,T);
 	Get_Bounding_Simplex_From_TrapezoidalMap(PT_map, P, T);
 	Interpolation_Matrix_Inverse =
 			PT_Interpolation_Matrix_Inverse[CurrentZone][CurrentFace];
