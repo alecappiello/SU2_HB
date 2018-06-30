@@ -736,7 +736,7 @@ void CLookUpTable::SetTDState_rhoe(su2double rho, su2double e) {
 
 void CLookUpTable::SetTDState_PT(su2double P, su2double T) {
   //  CurrentZone = SinglePhaseZone;
-	Get_Current_Zone(rhoe_boundary_map,P,T);
+	Get_Current_Zone(PT_boundary_map,P,T);
 	Get_Bounding_Simplex_From_TrapezoidalMap(PT_map, P, T);
 	Interpolation_Matrix_Inverse =
 			PT_Interpolation_Matrix_Inverse[CurrentZone][CurrentFace];
