@@ -4533,9 +4533,9 @@ void COutput::SetConvHistory_Body(ofstream *ConvHist_file,
       
       /*--- Compute span-wise values file for turbomachinery. ---*/
       
-//      if (config[val_iZone]->GetBoolTurbomachinery()) {
-//        SpecialOutput_Turbo(solver_container, geometry, config, val_iZone, output_files);
-//      }
+      if (config[val_iZone]->GetBoolTurbomachinery()) {
+        SpecialOutput_Turbo(solver_container, geometry, config, val_iZone, output_files);
+      }
       
       /*--- Output a file with the forces breakdown. ---*/
       
