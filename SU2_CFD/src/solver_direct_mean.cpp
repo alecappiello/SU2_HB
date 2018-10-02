@@ -12339,6 +12339,11 @@ void CEulerSolver::BC_Fluid_Interface(CGeometry *geometry, CSolver **solver_cont
   su2double *PrimVar_i = new su2double[nPrimVar];
   su2double *PrimVar_j = new su2double[nPrimVar];
   su2double *tmp_residual = new su2double[nVar];
+  su2double *SecondVar_i, *SecondVar_j;
+
+
+  SecondVar_i = new su2double[nSecondaryVar];
+  SecondVar_j = new su2double[nSecondaryVar];
   
   su2double weight;
   su2double P_static, rho_static;
@@ -12379,16 +12384,17 @@ void CEulerSolver::BC_Fluid_Interface(CGeometry *geometry, CSolver **solver_cont
             conv_numerics->SetPrimitive( PrimVar_i, PrimVar_j );
           
             if( !( config->GetKind_FluidModel() == STANDARD_AIR || config->GetKind_FluidModel() == IDEAL_GAS ) ) {
-              Secondary_i = node[iPoint]->GetSecondary();
+              SecondVar_i = node[iPoint]->GetSecondary();
 
               P_static   = PrimVar_j[nDim+1];
               rho_static = PrimVar_j[nDim+2];           
               FluidModel->SetTDState_Prho(P_static, rho_static);
 
-              Secondary_j[0] = FluidModel->GetdPdrho_e();
-              Secondary_j[1] = FluidModel->GetdPde_rho();  
+              SecondVar_j[0] = FluidModel->GetdPdrho_e();
+              SecondVar_j[1] = FluidModel->GetdPde_rho();
 
-              conv_numerics->SetSecondary(Secondary_i, Secondary_j);
+
+              conv_numerics->SetSecondary(SecondVar_i, SecondVar_j);
             }
 
             /*--- Set the normal vector ---*/
@@ -12431,6 +12437,8 @@ void CEulerSolver::BC_Fluid_Interface(CGeometry *geometry, CSolver **solver_cont
             for (jVertex = 0; jVertex < nDonorVertex; jVertex++){
               PrimVar_j[nDim+5] = GetSlidingState(iMarker, iVertex, nDim+5, jVertex); 
               PrimVar_j[nDim+6] = GetSlidingState(iMarker, iVertex, nDim+6, jVertex); 
+              PrimVar_j[nDim+7] = GetSlidingState(iMarker, iVertex, nDim+7, jVertex);
+              PrimVar_j[nDim+8] = GetSlidingState(iMarker, iVertex, nDim+8, jVertex);
 
               /*--- Get the weight computed in the interpolator class for the j-th donor vertex ---*/
               
@@ -12445,6 +12453,27 @@ void CEulerSolver::BC_Fluid_Interface(CGeometry *geometry, CSolver **solver_cont
 
               visc_numerics->SetPrimitive(PrimVar_i, PrimVar_j);
               visc_numerics->SetPrimVarGradient(node[iPoint]->GetGradient_Primitive(), node[iPoint]->GetGradient_Primitive());
+
+              if( !( config->GetKind_FluidModel() == STANDARD_AIR || config->GetKind_FluidModel() == IDEAL_GAS ) ) {
+
+                P_static   = GetSlidingState(iMarker, iVertex, nDim+1, jVertex);
+                rho_static = GetSlidingState(iMarker, iVertex, nDim+2, jVertex);
+                FluidModel->SetTDState_Prho(P_static, rho_static);
+
+
+                SecondVar_j[0] = FluidModel->GetdPdrho_e();
+                SecondVar_j[1] = FluidModel->GetdPde_rho();
+                SecondVar_j[2]= FluidModel->GetdTdrho_e();
+                SecondVar_j[3]= FluidModel->GetdTde_rho();
+
+                SecondVar_j[4]= FluidModel->Getdmudrho_T();
+                SecondVar_j[5]= FluidModel->GetdmudT_rho();
+
+                SecondVar_j[6]= FluidModel->Getdktdrho_T();
+                SecondVar_j[7]= FluidModel->GetdktdT_rho();
+                visc_numerics->SetSecondary(SecondVar_i, SecondVar_j);
+
+              }
 
               /*--- Turbulent kinetic energy ---*/
 
@@ -12478,8 +12507,10 @@ void CEulerSolver::BC_Fluid_Interface(CGeometry *geometry, CSolver **solver_cont
 
   delete [] tmp_residual;
   delete [] Normal;
-  delete [] PrimVar_i;
-  delete [] PrimVar_j;
+//  delete [] PrimVar_i;
+//  delete [] PrimVar_j;
+//  delete [] SecondVar_i;
+//  delete [] SecondVar_j;
 }
 
 void CEulerSolver::BC_Interface_Boundary(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics,
@@ -13762,7 +13793,7 @@ void CEulerSolver::LoadRestart(CGeometry **geometry, CSolver ***solver, CConfig 
 //      cout << "Old2: " << node[iPoint_Local]->GetSolution_Old()[2] << endl;
 //      cout << "New3: " << node[iPoint_Local]->GetSolution()[3] << endl;
 //      cout << "Old3: " << node[iPoint_Local]->GetSolution_Old()[3] << endl;
-
+//
       iPoint_Global_Local++;
 
       /*--- For dynamic meshes, read in and store the

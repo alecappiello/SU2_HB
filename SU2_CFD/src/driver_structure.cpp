@@ -303,6 +303,7 @@ CDriver::CDriver(char* confFile,
   /*--- Instantiate the geometry movement classes for the solution of unsteady
    flows on dynamic meshes, including rigid mesh transformations, dynamically
    deforming meshes, and preprocessing of harmonic balance. ---*/
+  bool restart      = (config_container[ZONE_0]->GetRestart() ||  config_container[ZONE_0]->GetDiscrete_Adjoint());
 
   for (iZone = 0; iZone < nZone; iZone++) {
 
@@ -314,7 +315,7 @@ CDriver::CDriver(char* confFile,
       FFDBox[iZone] = new CFreeFormDefBox*[MAX_NUMBER_FFD];
       surface_movement[iZone] = new CSurfaceMovement();
       surface_movement[iZone]->CopyBoundary(geometry_container[iZone][MESH_0], config_container[iZone]);
-      if (config_container[iZone]->GetUnsteady_Simulation() == HARMONIC_BALANCE){
+      if (config_container[iZone]->GetUnsteady_Simulation() == HARMONIC_BALANCE && !restart  ){
         iteration_container[iZone]->SetGrid_Movement(geometry_container, surface_movement, grid_movement, FFDBox, solver_container, config_container, iZone, 0, 0);
         geometry_container[iZone][MESH_0]->UpdateTurboVertex(config_container[iZone], iZone, INFLOW);
         geometry_container[iZone][MESH_0]->UpdateTurboVertex(config_container[iZone], iZone, OUTFLOW);
@@ -5412,7 +5413,7 @@ void CHBMultiZoneDriver::Run() {
       SetAvgTurboPerformance_HB(iTimeInstance);
 
 
-//  /*--- Print residuals ---*/
+  /*--- Print residuals ---*/
 //cout << "===========================" << endl;
 //cout << "EXT_ITER: " <<  ExtIter << endl;
 //

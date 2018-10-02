@@ -2226,6 +2226,7 @@ void CVolumetricMovement::Rigid_Rotation(CGeometry *geometry, CConfig *config,
   su2double time;
   bool harmonic_balance = (config->GetUnsteady_Simulation() == HARMONIC_BALANCE);
   bool adjoint = config->GetContinuous_Adjoint();
+  bool restart = (config->GetRestart() || config->GetDiscrete_Adjoint());
 
 
   /*--- Problem dimension and physical time step ---*/
@@ -2382,8 +2383,12 @@ void CVolumetricMovement::Rigid_Rotation(CGeometry *geometry, CConfig *config,
      Do not store the grid velocity if this is an adjoint calculation.---*/
 
     for (iDim = 0; iDim < nDim; iDim++) {
-      geometry->node[iPoint]->SetCoord(iDim, rotCoord[iDim] + Center[iDim]);
-      if (!adjoint) geometry->node[iPoint]->SetGridVel(iDim, newGridVel[iDim]);
+      if (!restart && harmonic_balance){
+//        cout << "HERE!!!!!!!!!!!!!!!!!" << endl;
+        geometry->node[iPoint]->SetCoord(iDim, rotCoord[iDim] + Center[iDim]);
+      }
+      if (!restart ) geometry->node[iPoint]->SetGridVel(iDim, newGridVel[iDim]);
+      //      geometry->node[iPoint]->SetGridVel(iDim, newGridVel[iDim]);
 
     }
   }
@@ -2416,15 +2421,17 @@ void CVolumetricMovement::Rigid_Rotation(CGeometry *geometry, CConfig *config,
     rotCoord[2] = rotMatrix[2][0]*r[0]
                                     + rotMatrix[2][1]*r[1]
                                                         + rotMatrix[2][2]*r[2];
-
-    config->SetRefOriginMoment_X(jMarker, Center[0]+rotCoord[0]);
-    config->SetRefOriginMoment_Y(jMarker, Center[1]+rotCoord[1]);
-    config->SetRefOriginMoment_Z(jMarker, Center[2]+rotCoord[2]);
+    if (!restart){
+      config->SetRefOriginMoment_X(jMarker, Center[0]+rotCoord[0]);
+      config->SetRefOriginMoment_Y(jMarker, Center[1]+rotCoord[1]);
+      config->SetRefOriginMoment_Z(jMarker, Center[2]+rotCoord[2]);
+    }
   }
 
   /*--- After moving all nodes, update geometry class ---*/
 
-  UpdateDualGrid(geometry, config);
+  if (!restart)
+    UpdateDualGrid(geometry, config);
 
 }
 
@@ -2448,7 +2455,10 @@ void CVolumetricMovement::Rigid_Pitching(CGeometry *geometry, CConfig *config, u
   unsigned short nDim = geometry->GetnDim();
   unsigned long iPoint;
   bool harmonic_balance = (config->GetUnsteady_Simulation() == HARMONIC_BALANCE);
+  bool unsteady = (config->GetUnsteady_Simulation() == DT_STEPPING_1ST)
+                      || (config->GetUnsteady_Simulation() == DT_STEPPING_2ND);
   bool adjoint = config->GetContinuous_Adjoint();
+  bool restart = (config->GetRestart() || config->GetDiscrete_Adjoint());
 
   
   /*--- Retrieve values from the config file ---*/
@@ -2582,10 +2592,12 @@ void CVolumetricMovement::Rigid_Pitching(CGeometry *geometry, CConfig *config, u
      Do not store the grid velocity if this is an adjoint calculation.---*/
     
     for (iDim = 0; iDim < nDim; iDim++) {
-      geometry->node[iPoint]->SetCoord(iDim, rotCoord[iDim]+Center[iDim]);
-      if (!adjoint) geometry->node[iPoint]->SetGridVel(iDim, newGridVel[iDim]);
+      if (!restart && harmonic_balance)
+        geometry->node[iPoint]->SetCoord(iDim, rotCoord[iDim]+Center[iDim]);
+      if (!adjoint || !config->GetDiscrete_Adjoint()) geometry->node[iPoint]->SetGridVel(iDim,newGridVel[iDim]);
+//       geometry->node[iPoint]->SetGridVel(iDim,0.1*iZone);
     }
-  }
+}
   
   /*--- For pitching we don't update the motion origin and moment reference origin. ---*/
 
@@ -2869,9 +2881,9 @@ void CVolumetricMovement::Rigid_Translation(CGeometry *geometry, CConfig *config
      velocity if this is an adjoint calculation. ---*/
 
     for (iDim = 0; iDim < nDim; iDim++) {
-//      if (!restart && harmonic_balance)
+      if (!restart && harmonic_balance)
         geometry->node[iPoint]->SetCoord(iDim, newCoord[iDim]);
-      if (!adjoint || !config->GetDiscrete_Adjoint()) geometry->node[iPoint]->SetGridVel(iDim,xDot[iDim]);
+      if (!restart || !adjoint || !config->GetDiscrete_Adjoint()) geometry->node[iPoint]->SetGridVel(iDim,xDot[iDim]);
     }
   }
 

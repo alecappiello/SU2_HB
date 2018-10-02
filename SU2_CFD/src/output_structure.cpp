@@ -5121,8 +5121,8 @@ void COutput::SetConvHistory_Body(ofstream *ConvHist_file,
 //                }
                 SPRINTF(surface_coeff, ", %12.10f", KineticEnergyLoss[iMarker_Monitoring][nSpanWiseSections]);
 								strcat(turbo_coeff, surface_coeff);
-                SPRINTF(surface_coeff, ", %12.10f", EntropyGen[iMarker_Monitoring][nSpanWiseSections]);
-//                SPRINTF(surface_coeff, ", %12.10f", EntropyGenAverage_HB);
+//                SPRINTF(surface_coeff, ", %12.10f", EntropyGen[iMarker_Monitoring][nSpanWiseSections]);
+                SPRINTF(surface_coeff, ", %12.10f", EntropyGenAverage_HB);
 								strcat(turbo_coeff, surface_coeff);
                 SPRINTF(surface_coeff, ", %12.10f", EulerianWork[iMarker_Monitoring][nSpanWiseSections]);
 								strcat(turbo_coeff, surface_coeff);
