@@ -844,7 +844,11 @@ inline void CConfig::SetKind_Linear_Solver_Prec(unsigned short val_kind_prec) { 
 
 inline su2double CConfig::GetLinear_Solver_Error(void) { return Linear_Solver_Error; }
 
+inline su2double CConfig::GetDeform_Linear_Solver_Error(void) { return Deform_Linear_Solver_Error; }
+
 inline unsigned long CConfig::GetLinear_Solver_Iter(void) { return Linear_Solver_Iter; }
+
+inline unsigned long CConfig::GetDeform_Linear_Solver_Iter(void) { return Deform_Linear_Solver_Iter; }
 
 inline unsigned short CConfig::GetLinear_Solver_ILU_n(void) { return Linear_Solver_ILU_n; }
 

@@ -337,10 +337,10 @@ void CIteration::SetGrid_Movement(CGeometry ***geometry_container,
 
     case TURBO_VIBRATION:
     	if (rank == MASTER_NODE)
-    		cout << endl<< "----------------------- TURBO VIBRATION --(ZONE "<< val_iZone << ") ----------------------" << endl;
+    		cout << endl<< "----------------------- TURBO VIBRATION --(ZONE "<< val_iZone << " GEOMZONE " << iGeomZone << ") ----------------------" << endl;
     	surface_movement[val_iZone]->Surface_Pitching(geometry_container[val_iZone][MESH_0],config_container[iGeomZone],ExtIter,iGeomZone,false);
-    	//surface_movement[val_iZone]->Surface_Plunging(geometry_container[val_iZone][MESH_0],config_container[iGeomZone],ExtIter,iGeomZone);
-    	grid_movement[val_iZone]->SetVolume_Deformation(geometry_container[val_iZone][MESH_0],config_container[iGeomZone], true,reset);
+        grid_movement[val_iZone]->SetVolume_Deformation_Elas(geometry_container[val_iZone][MESH_0], config_container[iGeomZone], true, false);
+//    	grid_movement[val_iZone]->SetVolume_Deformation(geometry_container[val_iZone][MESH_0], config_container[val_iZone], true, false);
     	grid_movement[val_iZone]->UpdateMultiGrid(geometry_container[val_iZone], config_container[iGeomZone]);
     	break;
 

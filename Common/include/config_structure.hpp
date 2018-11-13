@@ -481,8 +481,10 @@ private:
   unsigned short Kind_Trans_Model,			/*!< \brief Transition model definition. */
   Kind_ActDisk, Kind_Engine_Inflow, Kind_Inlet, *Kind_Data_Riemann, *Kind_Data_Giles;           /*!< \brief Kind of inlet boundary treatment. */
   su2double Linear_Solver_Error;		/*!< \brief Min error of the linear solver for the implicit formulation. */
+  su2double Deform_Linear_Solver_Error;    /*!< \brief Min error of the linear solver for the implicit formulation. */
   su2double Linear_Solver_Error_FSI_Struc;		/*!< \brief Min error of the linear solver for the implicit formulation in the structural side for FSI problems . */
   unsigned long Linear_Solver_Iter;		/*!< \brief Max iterations of the linear solver for the implicit formulation. */
+  unsigned long Deform_Linear_Solver_Iter;   /*!< \brief Max iterations of the linear solver for the implicit formulation. */
   unsigned long Linear_Solver_Iter_FSI_Struc;		/*!< \brief Max iterations of the linear solver for FSI applications and structural solver. */
   unsigned long Linear_Solver_Restart_Frequency;   /*!< \brief Restart frequency of the linear solver for the implicit formulation. */
   unsigned short Linear_Solver_ILU_n;		/*!< \brief ILU fill=in level. */
@@ -3283,10 +3285,22 @@ public:
   su2double GetLinear_Solver_Error(void);
   
   /*!
+   * \brief Get min error of the linear solver for the implicit formulation.
+   * \return Min error of the linear solver for the implicit formulation.
+   */
+  su2double GetDeform_Linear_Solver_Error(void);
+  
+  /*!
    * \brief Get max number of iterations of the linear solver for the implicit formulation.
    * \return Max number of iterations of the linear solver for the implicit formulation.
    */
   unsigned long GetLinear_Solver_Iter(void);
+  
+  /*!
+   * \brief Get max number of iterations of the linear solver for the implicit formulation.
+   * \return Max number of iterations of the linear solver for the implicit formulation.
+   */
+  unsigned long GetDeform_Linear_Solver_Iter(void);
   
   /*!
    * \brief Get the ILU fill-in level for the linear solver.

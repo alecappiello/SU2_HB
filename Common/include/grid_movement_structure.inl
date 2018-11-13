@@ -48,3 +48,11 @@ inline void CGridMovement::CrossProduct (su2double *v1, su2double *v2, su2double
 }
 
 inline su2double CGridMovement::DotProduct (su2double *v1, su2double *v2) { su2double scalar = v1[0]*v2[0]+v1[1]*v2[1]+v1[2]*v2[2]; return scalar; }
+
+inline void CVolumetricMovement::SetVolume_Deformation_Elas(CGeometry *geometry, CConfig *config, bool UpdateGeo, bool Derivative) {  }
+
+inline void CVolumetricMovement::Boundary_Dependencies(CGeometry **geometry, CConfig *config) {  }
+
+inline void CElasticityMovement::Set_nIterMesh(unsigned long val_nIterMesh) { nIterMesh = val_nIterMesh; }
+
+inline unsigned long CElasticityMovement::Get_nIterMesh() { return nIterMesh; }

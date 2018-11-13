@@ -126,7 +126,7 @@ CFEM_ElasticitySolver::CFEM_ElasticitySolver(CGeometry *geometry, CConfig *confi
   if (nDim == 2) {
     if (incompressible) {
       element_container[FEA_TERM][EL_TRIA] = new CTRIA1(nDim, config);
-      element_container[FEA_TERM][EL_QUAD] = new CQUAD4P1(nDim, config);
+      element_container[FEA_TERM][EL_QUAD] = new CQUAD4(nDim, config);
     }
     else {
       element_container[FEA_TERM][EL_TRIA] = new CTRIA1(nDim, config);
@@ -136,7 +136,7 @@ CFEM_ElasticitySolver::CFEM_ElasticitySolver(CGeometry *geometry, CConfig *confi
   else if (nDim == 3) {
     if (incompressible) {
       element_container[FEA_TERM][EL_TETRA] = new CTETRA1(nDim, config);
-      element_container[FEA_TERM][EL_HEXA] = new CHEXA8P1(nDim, config);
+      element_container[FEA_TERM][EL_HEXA] = new CHEXA8(nDim, config);
     }
     else {
       element_container[FEA_TERM][EL_TETRA] = new CTETRA1(nDim, config);

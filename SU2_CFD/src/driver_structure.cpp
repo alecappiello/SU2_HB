@@ -313,12 +313,14 @@ CDriver::CDriver(char* confFile,
         (config_container[iZone]->GetDirectDiff() == D_DESIGN)) {
       if (rank == MASTER_NODE)
         cout << "Setting dynamic mesh structure for zone "<< iZone<<"." << endl;
-      grid_movement[iZone] = new CVolumetricMovement(geometry_container[iZone][MESH_0], config_container[iZone]);
+//      grid_movement[iZone] = new CVolumetricMovement(geometry_container[iZone][MESH_0], config_container[iZone]);
+      grid_movement[iZone] = new CElasticityMovement(geometry_container[iZone][MESH_0], config_container[iZone]);
       FFDBox[iZone] = new CFreeFormDefBox*[MAX_NUMBER_FFD];
       surface_movement[iZone] = new CSurfaceMovement();
       surface_movement[iZone]->CopyBoundary(geometry_container[iZone][MESH_0], config_container[iZone]);
       if (config_container[iZone]->GetUnsteady_Simulation() == HARMONIC_BALANCE && !discrete_adjoint && !restart){
         iteration_container[iZone]->SetGrid_Movement(geometry_container, surface_movement, grid_movement, FFDBox, solver_container, config_container, iZone, 0, 0, false);
+        geometry_container[iZone][MESH_0]->UpdateGeometry(geometry_container[iZone],config_container[iZone]);
         geometry_container[iZone][MESH_0]->UpdateTurboVertex(config_container[iZone], iZone, INFLOW);
         geometry_container[iZone][MESH_0]->UpdateTurboVertex(config_container[iZone], iZone, OUTFLOW);
 //        SetHarmonicBalance(iZone);
@@ -357,10 +359,7 @@ CDriver::CDriver(char* confFile,
         geometry_container[iZone][MESH_0]->ComputeWall_Distance(config_container[iZone]);
     }
   }
-  bool harmonic_balance;
-  harmonic_balance=true;
-//  if (config_container[iZone]->GetUnsteady_Simulation() == HARMONIC_BALANCE)
-//	  harmonic_balance=true;
+
 
   if( !discrete_adjoint && !restart)
     SetTimeSpectral_Velocities(false);
@@ -453,6 +452,7 @@ void CDriver::Postprocessing() {
     for (iZone = 0; iZone < nZone; iZone++) {
       ConvHist_file[iZone].close();
     }
+    delete [] ConvHist_file;
 
   }
 
@@ -5108,6 +5108,7 @@ void CHBDriver::SetHarmonicBalance(unsigned short iTimeInstance) {
     delete [] Source_Turb;
   }
 
+  delete [] Source;
   delete [] U;
   delete [] U_old;
   delete [] Psi;
@@ -5490,14 +5491,6 @@ void CHBMultiZoneDriver::Run() {
   /*--- Run a single iteration of a Harmonic Balance problem. Preprocess all
    all zones before beginning the iteration. ---*/
 
-//  if (ExtIter==0){
-//	  for (iZone = 0; iZone < nZone; iZone++){
-//		  iteration_container[iZone]->SetGrid_Movement(geometry_container, surface_movement, grid_movement, FFDBox, solver_container, config_container, iZone, 0, 0, false);
-//		  geometry_container[iZone][MESH_0]->UpdateTurboVertex(config_container[iZone], iZone, INFLOW);
-//		  geometry_container[iZone][MESH_0]->UpdateTurboVertex(config_container[iZone], iZone, OUTFLOW);
-//	  }
-//	  SetTimeSpectral_Velocities(false);
-//  }
   for (iZone = 0; iZone < nZone; iZone++)
     SetHarmonicBalance(iZone);
 
@@ -5827,7 +5820,7 @@ void CHBMultiZoneDriver::SetTimeSpectral_Velocities(bool reset){
 
 	  /*--- Compute period of oscillation & compute time interval using nTimeInstances ---*/
 	  su2double period = config_container[ZONE_0]->GetHarmonicBalance_Period();//config_container[ZONE_0]->GetTimeSpectral_Period();
-	  period /= config_container[ZONE_0]->GetTime_Ref();
+	  period /= (su2double)config_container[ZONE_0]->GetTime_Ref();
 	  su2double deltaT = period/(su2double)(config_container[ZONE_0]->GetnTimeInstances());
 
 	  /*--- allocate dynamic memory for angular positions (these are the abscissas) ---*/
@@ -5945,14 +5938,19 @@ void CHBMultiZoneDriver::ResetMesh_HB(void){
 			}
 		}
 	}
-	SetTimeSpectral_Velocities(false);
-	for (iMGlevel = 0; iMGlevel <= config_container[ZONE_0]->GetnMGLevels(); iMGlevel++) {
-		for (iZone = 0; iZone < nZone; iZone++) {
-			geometry_container[iZone][iMGlevel]->Set_MPI_Coord(config_container[ZONE_0]);
-			geometry_container[iZone][iMGlevel]->Set_MPI_GridVel(config_container[ZONE_0]);
-
-		}
+	SetTimeSpectral_Velocities(true);
+	for (iZone = 0; iZone < nZone; iZone++) {
+	  grid_movement[iZone]->UpdateDualGrid(geometry_container[iZone][MESH_0], config_container[iZone]);
+	  geometry_container[iZone][MESH_0]->UpdateGeometry(geometry_container[iZone],config_container[iZone]);
+      geometry_container[iZone][MESH_0]->UpdateTurboVertex(config_container[iZone], iZone, INFLOW);
+      geometry_container[iZone][MESH_0]->UpdateTurboVertex(config_container[iZone], iZone, OUTFLOW);
 	}
+//	for (iMGlevel = 0; iMGlevel <= config_container[ZONE_0]->GetnMGLevels(); iMGlevel++) {
+//		for (iZone = 0; iZone < nZone; iZone++) {
+//			geometry_container[iZone][iMGlevel]->Set_MPI_Coord(config_container[ZONE_0]);
+//			geometry_container[iZone][iMGlevel]->Set_MPI_GridVel(config_container[ZONE_0]);
+//		}
+//	}
 }
 
 void CDriver::ResetMesh_HB(void){}
@@ -6121,9 +6119,6 @@ void CDiscAdjHBMultiZone::Run() {
 
     SetAdj_ObjFunction();
 
-    for (iZone = 0; iZone < nZone; iZone++)
-    	  iteration_container[iZone]->SetGrid_Movement(geometry_container, surface_movement, grid_movement, FFDBox, solver_container, config_container, iZone, 0, 0, true);
-
     /*--- Interpret the stored information by calling the corresponding routine of the AD tool. ---*/
 
     AD::ComputeAdjoint();
@@ -6151,7 +6146,6 @@ void CDiscAdjHBMultiZone::SetRecording(unsigned short kind_recording){
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 #endif
 
-//  ResetMesh_HB();
   AD::Reset();
 
   /*--- Prepare for recording by resetting the flow solution to the initial converged solution---*/
@@ -6186,9 +6180,11 @@ void CDiscAdjHBMultiZone::SetRecording(unsigned short kind_recording){
     iteration_container[iZone]->SetDependencies(solver_container, geometry_container, config_container, iZone, kind_recording);
   }
 
-//  for (iZone = 0; iZone < nZone; iZone++)
-//	  iteration_container[iZone]->SetGrid_Movement(geometry_container, surface_movement, grid_movement, FFDBox, solver_container, config_container, iZone, 0, 0, false);
-//  SetTimeSpectral_Velocities(false);
+  ResetMesh_HB();
+  for (iZone = 0; iZone < nZone; iZone++)
+	  iteration_container[iZone]->SetGrid_Movement(geometry_container, surface_movement, grid_movement, FFDBox, solver_container, config_container, iZone, 0, 0, false);
+  SetTimeSpectral_Velocities(false);
+
   /*--- Do one iteration of the direct flow solver ---*/
 
   DirectRun();
@@ -6257,17 +6253,6 @@ void CDiscAdjHBMultiZone::DirectRun(){
 #ifdef HAVE_MPI
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 #endif
-  //for (iTimeInstance = 0; iTimeInstance < nTotTimeInstances; iTimeInstance++)
-	//  iteration_container[iTimeInstance]->SetGrid_Movement(geometry_container, surface_movement, grid_movement, FFDBox, solver_container, config_container, iTimeInstance, 0, 0, false);
-
-//  if (ExtIter==0){
-//	  for (iZone = 0; iZone < nZone; iZone++){
-//		  iteration_container[iZone]->SetGrid_Movement(geometry_container, surface_movement, grid_movement, FFDBox, solver_container, config_container, iZone, 0, 0, false);
-//		  geometry_container[iZone][MESH_0]->UpdateTurboVertex(config_container[iZone], iZone, INFLOW);
-//		  geometry_container[iZone][MESH_0]->UpdateTurboVertex(config_container[iZone], iZone, OUTFLOW);
-//	  }
-//	  SetTimeSpectral_Velocities(false);
-//  }
 
   for (iTimeInstance = 0; iTimeInstance < nTotTimeInstances; iTimeInstance++)
     direct_iteration[iTimeInstance]->Preprocess(output, integration_container, geometry_container,
