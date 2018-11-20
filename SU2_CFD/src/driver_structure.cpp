@@ -184,7 +184,7 @@ CDriver::CDriver(char* confFile,
     }
 
   }
-
+bool harmonic_balance = config_container[ZONE_0]->GetUnsteady_Simulation() == HARMONIC_BALANCE;
   /*--- If activated by the compile directive, perform a partition analysis. ---*/
 #if PARTITION
   Partition_Analysis(geometry_container[ZONE_0][MESH_0], config_container[ZONE_0]);
@@ -313,8 +313,8 @@ CDriver::CDriver(char* confFile,
         (config_container[iZone]->GetDirectDiff() == D_DESIGN)) {
       if (rank == MASTER_NODE)
         cout << "Setting dynamic mesh structure for zone "<< iZone<<"." << endl;
-//      grid_movement[iZone] = new CVolumetricMovement(geometry_container[iZone][MESH_0], config_container[iZone]);
-      grid_movement[iZone] = new CElasticityMovement(geometry_container[iZone][MESH_0], config_container[iZone]);
+      grid_movement[iZone] = new CVolumetricMovement(geometry_container[iZone][MESH_0], config_container[iZone]);
+//      grid_movement[iZone] = new CElasticityMovement(geometry_container[iZone][MESH_0], config_container[iZone]);
       FFDBox[iZone] = new CFreeFormDefBox*[MAX_NUMBER_FFD];
       surface_movement[iZone] = new CSurfaceMovement();
       surface_movement[iZone]->CopyBoundary(geometry_container[iZone][MESH_0], config_container[iZone]);
@@ -361,7 +361,7 @@ CDriver::CDriver(char* confFile,
   }
 
 
-  if( !discrete_adjoint && !restart)
+  if( !discrete_adjoint && !restart && harmonic_balance)
     SetTimeSpectral_Velocities(false);
 
   /*---If the Grid Movement is static initialize the static mesh movment ---*/
