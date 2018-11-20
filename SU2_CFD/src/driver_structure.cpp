@@ -313,8 +313,8 @@ bool harmonic_balance = config_container[ZONE_0]->GetUnsteady_Simulation() == HA
         (config_container[iZone]->GetDirectDiff() == D_DESIGN)) {
       if (rank == MASTER_NODE)
         cout << "Setting dynamic mesh structure for zone "<< iZone<<"." << endl;
-      grid_movement[iZone] = new CVolumetricMovement(geometry_container[iZone][MESH_0], config_container[iZone]);
-//      grid_movement[iZone] = new CElasticityMovement(geometry_container[iZone][MESH_0], config_container[iZone]);
+//      grid_movement[iZone] = new CVolumetricMovement(geometry_container[iZone][MESH_0], config_container[iZone]);
+      grid_movement[iZone] = new CElasticityMovement(geometry_container[iZone][MESH_0], config_container[iZone]);
       FFDBox[iZone] = new CFreeFormDefBox*[MAX_NUMBER_FFD];
       surface_movement[iZone] = new CSurfaceMovement();
       surface_movement[iZone]->CopyBoundary(geometry_container[iZone][MESH_0], config_container[iZone]);
@@ -3711,6 +3711,13 @@ void CDriver::SetTimeSpectral_Velocities(bool reset){
 	    delete [] coords[iZone];
 	  }
 	  delete [] coords;
+    for (iMGlevel = 0; iMGlevel <= config_container[ZONE_0]->GetnMGLevels(); iMGlevel++) {
+      for (iZone = 0; iZone < nZone; iZone++) {
+        geometry_container[iZone][iMGlevel]->Set_MPI_Coord(config_container[ZONE_0]);
+        geometry_container[iZone][iMGlevel]->Set_MPI_GridVel(config_container[ZONE_0]);
+
+      }
+    }
 
 }
 
@@ -5945,12 +5952,6 @@ void CHBMultiZoneDriver::ResetMesh_HB(void){
       geometry_container[iZone][MESH_0]->UpdateTurboVertex(config_container[iZone], iZone, INFLOW);
       geometry_container[iZone][MESH_0]->UpdateTurboVertex(config_container[iZone], iZone, OUTFLOW);
 	}
-//	for (iMGlevel = 0; iMGlevel <= config_container[ZONE_0]->GetnMGLevels(); iMGlevel++) {
-//		for (iZone = 0; iZone < nZone; iZone++) {
-//			geometry_container[iZone][iMGlevel]->Set_MPI_Coord(config_container[ZONE_0]);
-//			geometry_container[iZone][iMGlevel]->Set_MPI_GridVel(config_container[ZONE_0]);
-//		}
-//	}
 }
 
 void CDriver::ResetMesh_HB(void){}
