@@ -1903,7 +1903,7 @@ void CVolumetricMovement::SetBoundaryDisplacements(CGeometry *geometry, CConfig 
   for (iMarker = 0; iMarker < config->GetnMarker_All(); iMarker++) {
     if (((config->GetMarker_All_Moving(iMarker) == YES) && (Kind_SU2 == SU2_CFD)) ||
         ((config->GetMarker_All_DV(iMarker) == YES) && (Kind_SU2 == SU2_DEF)) ||
-        ((config->GetDiscrete_Adjoint()) && (Kind_SU2 == SU2_CFD) && (config->GetMarker_All_DV(iMarker) == YES)) ||
+        ((config->GetDirectDiff() == D_DESIGN) && (Kind_SU2 == SU2_CFD) && (config->GetMarker_All_DV(iMarker) == YES)) ||
         ((config->GetMarker_All_DV(iMarker) == YES) && (Kind_SU2 == SU2_DOT))) {
       for (iVertex = 0; iVertex < geometry->nVertex[iMarker]; iVertex++) {
         iPoint = geometry->vertex[iMarker][iVertex]->GetNode();
@@ -1981,7 +1981,7 @@ void CVolumetricMovement::SetBoundaryDisplacements(CGeometry *geometry, CConfig 
         }
       }
     }
-  }
+}
 
     /*--- Apply normal boundary condition on the specified markers ---*/
 
@@ -2082,7 +2082,7 @@ void CVolumetricMovement::SetBoundaryDerivatives(CGeometry *geometry, CConfig *c
 
   su2double * VarCoord;
   unsigned short Kind_SU2 = config->GetKind_SU2();
-  if ((config->GetDiscrete_Adjoint()) && (Kind_SU2 == SU2_CFD)) {
+  if ((config->GetDirectDiff() == D_DESIGN) && (Kind_SU2 == SU2_CFD)) {
     for (iMarker = 0; iMarker < config->GetnMarker_All(); iMarker++) {
       if ((config->GetMarker_All_DV(iMarker) == YES)) {
         for (iVertex = 0; iVertex < geometry->nVertex[iMarker]; iVertex++) {
@@ -2124,7 +2124,7 @@ void CVolumetricMovement::UpdateGridCoord_Derivatives(CGeometry *geometry, CConf
 
   /*--- Update derivatives of the grid coordinates using the solution of the linear system
      after grid deformation (LinSysSol contains the derivatives of the x, y, z displacements). ---*/
-  if ((config->GetDiscrete_Adjoint()) && (Kind_SU2 == SU2_CFD)) {
+  if ((config->GetDirectDiff() == D_DESIGN) && (Kind_SU2 == SU2_CFD)) {
     for (iPoint = 0; iPoint < geometry->GetnPoint(); iPoint++) {
       new_coord[0] = 0.0; new_coord[1] = 0.0; new_coord[2] = 0.0;
       for (iDim = 0; iDim < nDim; iDim++) {
@@ -2598,7 +2598,7 @@ void CVolumetricMovement::Rigid_Pitching(CGeometry *geometry, CConfig *config, u
     for (iDim = 0; iDim < nDim; iDim++) {
     	//if (!restart && harmonic_balance)
     	geometry->node[iPoint]->SetCoord(iDim, rotCoord[iDim]+Center[iDim]);
-//    	if (!adjoint) geometry->node[iPoint]->SetGridVel(iDim, newGridVel[iDim]);
+    	if (!adjoint) geometry->node[iPoint]->SetGridVel(iDim, newGridVel[iDim]);
     	//if (!restart||!adjoint) geometry->node[iPoint]->SetGridVel(iDim, newGridVel[iDim]);
     	//if (!adjoint || !config->GetDiscrete_Adjoint())
     	//	geometry->node[iPoint]->SetGridVel(iDim,newGridVel[iDim]);
@@ -3269,6 +3269,100 @@ CElasticityMovement::~CElasticityMovement(void) {
 
 }
 
+void CElasticityMovement::ComputeSolid_Wall_Distance(CGeometry *geometry, CConfig *config, su2double &MinDistance, su2double &MaxDistance) {
+
+  unsigned long nVertex_SolidWall, ii, jj, iVertex, iPoint, pointID;
+  unsigned short iMarker, iDim;
+  su2double dist, MaxDistance_Local, MinDistance_Local;
+  int rankID;
+
+  /*--- Initialize min and max distance ---*/
+
+  MaxDistance = -1E22; MinDistance = 1E22;
+
+  /*--- Compute the total number of nodes on no-slip boundaries ---*/
+
+  nVertex_SolidWall = 0;
+  for(iMarker=0; iMarker<config->GetnMarker_All(); ++iMarker) {
+    if( (config->GetMarker_All_KindBC(iMarker) == EULER_WALL ||
+         config->GetMarker_All_KindBC(iMarker) == HEAT_FLUX)  ||
+       (config->GetMarker_All_KindBC(iMarker) == ISOTHERMAL) ) {
+      nVertex_SolidWall += geometry->GetnVertex(iMarker);
+    }
+  }
+
+  /*--- Allocate the vectors to hold boundary node coordinates
+   and its local ID. ---*/
+
+  vector<su2double>     Coord_bound(nDim*nVertex_SolidWall);
+  vector<unsigned long> PointIDs(nVertex_SolidWall);
+
+  /*--- Retrieve and store the coordinates of the no-slip boundary nodes
+   and their local point IDs. ---*/
+
+  ii = 0; jj = 0;
+  for (iMarker=0; iMarker<config->GetnMarker_All(); ++iMarker) {
+    if ( (config->GetMarker_All_KindBC(iMarker) == EULER_WALL ||
+         config->GetMarker_All_KindBC(iMarker) == HEAT_FLUX)  ||
+       (config->GetMarker_All_KindBC(iMarker) == ISOTHERMAL) ) {
+      for (iVertex=0; iVertex<geometry->GetnVertex(iMarker); ++iVertex) {
+        iPoint = geometry->vertex[iMarker][iVertex]->GetNode();
+        PointIDs[jj++] = iPoint;
+        for (iDim=0; iDim<nDim; ++iDim)
+          Coord_bound[ii++] = geometry->node[iPoint]->GetCoord(iDim);
+      }
+    }
+  }
+
+  /*--- Build the ADT of the boundary nodes. ---*/
+
+  su2_adtPointsOnlyClass WallADT(nDim, nVertex_SolidWall, Coord_bound.data(), PointIDs.data());
+
+  /*--- Loop over all interior mesh nodes and compute the distances to each
+   of the no-slip boundary nodes. Store the minimum distance to the wall
+   for each interior mesh node. ---*/
+
+  if( WallADT.IsEmpty() ) {
+
+    /*--- No solid wall boundary nodes in the entire mesh.
+     Set the wall distance to zero for all nodes. ---*/
+
+    for (iPoint=0; iPoint<geometry->GetnPoint(); ++iPoint)
+      geometry->node[iPoint]->SetWall_Distance(0.0);
+  }
+  else {
+
+    /*--- Solid wall boundary nodes are present. Compute the wall
+     distance for all nodes. ---*/
+
+    for(iPoint=0; iPoint<geometry->GetnPoint(); ++iPoint) {
+
+      WallADT.DetermineNearestNode(geometry->node[iPoint]->GetCoord(), dist,
+                                   pointID, rankID);
+      geometry->node[iPoint]->SetWall_Distance(dist);
+
+      MaxDistance = max(MaxDistance, dist);
+
+      /*--- To discard points on the surface we use > EPS ---*/
+
+      if (sqrt(dist) > EPS)  MinDistance = min(MinDistance, dist);
+
+    }
+
+    MaxDistance_Local = MaxDistance; MaxDistance = 0.0;
+    MinDistance_Local = MinDistance; MinDistance = 0.0;
+
+#ifdef HAVE_MPI
+    SU2_MPI::Allreduce(&MaxDistance_Local, &MaxDistance, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+    SU2_MPI::Allreduce(&MinDistance_Local, &MinDistance, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
+#else
+    MaxDistance = MaxDistance_Local;
+    MinDistance = MinDistance_Local;
+#endif
+
+  }
+
+}
 
 void CElasticityMovement::SetVolume_Deformation_Elas(CGeometry *geometry, CConfig *config, bool UpdateGeo, bool Derivative){
 	

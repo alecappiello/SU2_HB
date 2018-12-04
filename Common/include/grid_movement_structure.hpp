@@ -624,6 +624,8 @@ public:
    */
   void Boundary_Dependencies(CGeometry **geometry, CConfig *config);
 
+  void ComputeSolid_Wall_Distance(CGeometry *geometry, CConfig *config, su2double &MinDistance, su2double &MaxDistance);
+
 };
 
 

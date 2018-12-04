@@ -6184,6 +6184,12 @@ void CDiscAdjHBMultiZone::SetRecording(unsigned short kind_recording){
   ResetMesh_HB();
   for (iZone = 0; iZone < nZone; iZone++)
 	  iteration_container[iZone]->SetGrid_Movement(geometry_container, surface_movement, grid_movement, FFDBox, solver_container, config_container, iZone, 0, 0, false);
+  if (rank == MASTER_NODE)
+    cout << " Updating turbovertex after rigid mesh transformation. " << endl;
+  for (iZone = 0; iZone < nZone; iZone++){
+    geometry_container[iZone][MESH_0]->UpdateTurboVertex(config_container[iZone], iZone, INFLOW);
+    geometry_container[iZone][MESH_0]->UpdateTurboVertex(config_container[iZone], iZone, OUTFLOW);
+  }
   SetTimeSpectral_Velocities(false);
 
   /*--- Do one iteration of the direct flow solver ---*/
