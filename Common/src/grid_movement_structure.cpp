@@ -203,18 +203,18 @@ void CVolumetricMovement::SetVolume_Deformation(CGeometry *geometry, CConfig *co
      * hence we need the corresponding matrix vector product and the preconditioner.  ---*/
     if (!Derivative || ((config->GetKind_SU2() == SU2_CFD) && Derivative)) {
 
-    	if (config->GetKind_Deform_Linear_Solver_Prec() == LU_SGS) {
+    	if (config->GetKind_Linear_Solver_Prec() == LU_SGS) {
         if ((rank == MASTER_NODE) && Screen_Output) cout << "\n# LU_SGS preconditioner." << endl;
     		mat_vec = new CSysMatrixVectorProduct(StiffMatrix, geometry, config);
     		precond = new CLU_SGSPreconditioner(StiffMatrix, geometry, config);
     	}
-    	if (config->GetKind_Deform_Linear_Solver_Prec() == ILU) {
+    	if (config->GetKind_Linear_Solver_Prec() == ILU) {
         if ((rank == MASTER_NODE) && Screen_Output) cout << "\n# ILU preconditioner." << endl;
     		StiffMatrix.BuildILUPreconditioner();
     		mat_vec = new CSysMatrixVectorProduct(StiffMatrix, geometry, config);
     		precond = new CILUPreconditioner(StiffMatrix, geometry, config);
     	}
-    	if (config->GetKind_Deform_Linear_Solver_Prec() == JACOBI) {
+    	if (config->GetKind_Linear_Solver_Prec() == JACOBI) {
         if ((rank == MASTER_NODE) && Screen_Output) cout << "\n# Jacobi preconditioner." << endl;
     		StiffMatrix.BuildJacobiPreconditioner();
     		mat_vec = new CSysMatrixVectorProduct(StiffMatrix, geometry, config);
@@ -225,14 +225,14 @@ void CVolumetricMovement::SetVolume_Deformation(CGeometry *geometry, CConfig *co
 
     	/*--- Build the ILU or Jacobi preconditioner for the transposed system ---*/
 
-    	if ((config->GetKind_Deform_Linear_Solver_Prec() == ILU) ||
-    			(config->GetKind_Deform_Linear_Solver_Prec() == LU_SGS)) {
+    	if ((config->GetKind_Linear_Solver_Prec() == ILU) ||
+    			(config->GetKind_Linear_Solver_Prec() == LU_SGS)) {
         if ((rank == MASTER_NODE) && Screen_Output) cout << "\n# ILU preconditioner." << endl;
     		StiffMatrix.BuildILUPreconditioner(true);
     		mat_vec = new CSysMatrixVectorProductTransposed(StiffMatrix, geometry, config);
     		precond = new CILUPreconditioner(StiffMatrix, geometry, config);
     	}
-    	if (config->GetKind_Deform_Linear_Solver_Prec() == JACOBI) {
+    	if (config->GetKind_Linear_Solver_Prec() == JACOBI) {
         if ((rank == MASTER_NODE) && Screen_Output) cout << "\n# Jacobi preconditioner." << endl;
     		StiffMatrix.BuildJacobiPreconditioner(true);
     		mat_vec = new CSysMatrixVectorProductTransposed(StiffMatrix, geometry, config);
@@ -244,7 +244,7 @@ void CVolumetricMovement::SetVolume_Deformation(CGeometry *geometry, CConfig *co
     CSysSolve *system  = new CSysSolve();
     
     if (LinSysRes.norm() != 0.0){
-      switch (config->GetKind_Deform_Linear_Solver()) {
+      switch (config->GetKind_Linear_Solver()) {
         
         /*--- Solve the linear system (GMRES with restart) ---*/
         
