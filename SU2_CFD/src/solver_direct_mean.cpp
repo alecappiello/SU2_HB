@@ -5564,11 +5564,11 @@ void CEulerSolver::Pressure_Forces(CGeometry *geometry, CConfig *config) {
             ForceInviscid[iDim] += Force[iDim];
           }
           
-          if(1){
+          if(unsteady){
         	  su2double *Grid_Vel;
         	  Grid_Vel = geometry->node[iPoint]->GetGridVel();
         	  for (iDim = 0; iDim<nDim; iDim++)
-        	          		  LocalWork += -Pressure * Normal[iDim] * factor * AxiFactor;// * Grid_Vel[iDim];
+        	          		  LocalWork += -Pressure * Normal[iDim] * factor * AxiFactor * Grid_Vel[iDim];
           }
 
           /*--- Moment with respect to the reference axis ---*/
