@@ -243,6 +243,9 @@ def aerodynamics( config, state=None ):
          'TARGET_HEATFLUX' in files ) :
         pull.append( files['TARGET_HEATFLUX'] )
 
+    if (config.has_key('LUT_FILENAME')):
+        pull.append(config['LUT_FILENAME'])
+
     # output redirection
     with redirect_folder( 'DIRECT', pull, link ) as push:
         with redirect_output(log_direct):     

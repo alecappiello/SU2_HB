@@ -702,6 +702,9 @@ def findiff( config, state=None ):
     # files: target heat flux distribution
     if 'INV_DESIGN_HEATFLUX' in special_cases and 'TARGET_HEATFLUX' in files:
         pull.append(files['TARGET_HEATFLUX'])
+    # files: target heat flux distribution
+    if (config.has_key('LUT_FILENAME')):
+        pull.append(config['LUT_FILENAME'])
 
        
     # output redirection
@@ -976,6 +979,8 @@ def directdiff( config, state=None ):
     # files: target heat flux distribution
     if 'INV_DESIGN_HEATFLUX' in special_cases and 'TARGET_HEATFLUX' in files:
         pull.append(files['TARGET_HEATFLUX'])
+
+
 
     # output redirection
     with redirect_folder('DIRECTDIFF',pull,link) as push:

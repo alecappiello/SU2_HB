@@ -198,6 +198,8 @@ class State(ordered_bunch):
                 pull.append(value)
         
         #: for each filename
+        if (config.has_key('LUT_FILENAME')):
+            pull.append(config['LUT_FILENAME'])
         
         return pull,link
     

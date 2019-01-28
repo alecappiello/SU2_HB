@@ -5413,7 +5413,7 @@ void CHBMultiZoneDriver::Run() {
       SetAvgTurboPerformance_HB(iTimeInstance);
 
 
-  /*--- Print residuals ---*/
+//  /*--- Print residuals ---*/
 //cout << "===========================" << endl;
 //cout << "EXT_ITER: " <<  ExtIter << endl;
 //
