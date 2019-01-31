@@ -9243,6 +9243,7 @@ void CEulerSolver::BC_Riemann(CGeometry *geometry, CSolver **solver_container,
   
   su2double *Normal, *FlowDirMix, TangVelocity, NormalVelocity;
   Normal = new su2double[nDim];
+
   Velocity_i = new su2double[nDim];
   Velocity_b = new su2double[nDim];
   Velocity_e = new su2double[nDim];
@@ -9263,8 +9264,6 @@ void CEulerSolver::BC_Riemann(CGeometry *geometry, CSolver **solver_container,
     invP_Tensor[iVar] = new su2double[nVar];
   }
   
-
-
   /*--- Loop over all the vertices on this boundary marker ---*/
   for (iVertex = 0; iVertex < geometry->nVertex[val_marker]; iVertex++) {
     
@@ -9332,8 +9331,6 @@ void CEulerSolver::BC_Riemann(CGeometry *geometry, CSolver **solver_container,
         else P_Total  = config->GetRiemann_Var1(Marker_Tag);
         T_Total  = config->GetRiemann_Var2(Marker_Tag);
         Flow_Dir = config->GetRiemann_FlowDir(Marker_Tag);
-//        cout << "PTOTAL:  " << P_Total << endl;
-//        P_Total  = config->GetRiemann_Var1(Marker_Tag);
         /*--- Non-dim. the inputs if necessary. ---*/
         P_Total /= config->GetPressure_Ref();
         T_Total /= config->GetTemperature_Ref();
@@ -13790,12 +13787,9 @@ void CEulerSolver::LoadRestart(CGeometry **geometry, CSolver ***solver, CConfig 
   bool time_stepping = config->GetUnsteady_Simulation() == TIME_STEPPING;
   bool harmonic_balance = config->GetUnsteady_Simulation() == HARMONIC_BALANCE;
 //  bool harmonic_balance = config->GetUnsteady_Simulation() == HARMONIC_BALANCE && !config->GetDiscrete_Adjoint();
-  su2double Density, Temperature, StaticEnergy, Velocity2;
 
   string UnstExt, text_line;
   ifstream restart_file;
-//  CFluidModel *FluidModel;
-//  FluidModel = GetFluidModel();
 
   unsigned short iZone = config->GetiZone();
   unsigned short nZone = config->GetnZone();
@@ -13854,19 +13848,7 @@ void CEulerSolver::LoadRestart(CGeometry **geometry, CSolver ***solver, CConfig 
        offset in the buffer of data from the restart file and load it. ---*/
 
       index = counter*Restart_Vars[1] + skipVars;
-      for (iVar = 0; iVar < nVar-1; iVar++){
-        Solution[iVar] = Restart_Data[index+iVar];
-      }
-      Temperature = Restart_Data[index+nVar+1+nVar+skipVars+1];
-      Density = Solution[0];
-      FluidModel->SetTDState_rhoT(Density, Temperature);
-      StaticEnergy= FluidModel->GetStaticEnergy();
-      Velocity2 = 0.0;
-      for (iDim = 0; iDim < nDim; iDim++)
-        Velocity2 += (Solution[iDim+1]/Solution[0])*(Solution[iDim+1]/Solution[0]);
-      Solution[nVar-1]= Density*(StaticEnergy + 0.5*Velocity2);
-
-
+      for (iVar = 0; iVar < nVar; iVar++) Solution[iVar] = Restart_Data[index+iVar];
       node[iPoint_Local]->SetSolution(Solution);
       if (harmonic_balance){
         index = counter*Restart_Vars[1] + skipVars + nVar;
@@ -13875,17 +13857,7 @@ void CEulerSolver::LoadRestart(CGeometry **geometry, CSolver ***solver, CConfig 
         } else if (turb_model == SST) {
           index+=2;
         }
-        for (iVar = 0; iVar < nVar; iVar++){
-          Solution[iVar] = Restart_Data[index+iVar];
-        }
-        Density = Solution[0];
-        Temperature = Restart_Data[index+nVar+skipVars+1];
-        FluidModel->SetTDState_rhoT(Density, Temperature);
-        StaticEnergy= FluidModel->GetStaticEnergy();
-        Velocity2 = 0.0;
-        for (iDim = 0; iDim < nDim; iDim++)
-          Velocity2 += (Solution[iDim+1]/Solution[0])*(Solution[iDim+1]/Solution[0]);
-        Solution[nVar-1]= Density*(StaticEnergy + 0.5*Velocity2);
+        for (iVar = 0; iVar < nVar; iVar++) Solution[iVar] = Restart_Data[index+iVar];
         node[iPoint_Local]->SetSolution_Old(Solution);
       }
 //      cout << "==============" << endl;

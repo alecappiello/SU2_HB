@@ -32,11 +32,13 @@
  */
 
 #include "../include/SU2_CFD.hpp"
+#include <fenv.h>
 
 using namespace std;
 
 int main(int argc, char *argv[]) {
   
+  feenableexcept(FE_INVALID | FE_OVERFLOW);
   unsigned short nZone, nDim;
   unsigned short nTimeInstances, nGeomZones, nTotTimeInstances;
   char config_file_name[MAX_STRING_SIZE];

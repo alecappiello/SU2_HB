@@ -247,7 +247,7 @@ CLookUpTable::CLookUpTable(CConfig *config, bool dimensional) :
 	//TODO this has to be generalize for multi-zone
 	unsigned int SinglePhaseZone = 0;
 	CurrentZone= SinglePhaseZone;
-	nInterpPoints = 3;
+	nInterpPoints = 5;
 	CurrentPoints.resize(nInterpPoints, 0);
 	LUT_Debug_Mode = config->GetLUT_Debug_Mode();
 	Interpolation_Matrix.resize(nInterpPoints,
@@ -552,21 +552,27 @@ void CLookUpTable::Compute_Interpolation_Coefficients() {
 
 		//Now use the nearest 16 points to construct an interpolation function
 		//for each search pair option
+//cout << "RHOE" << endl;
 		Rhoe_Interpolation_Matrix_Inverse[CurrentZone][i] =
 				Interpolation_Matrix_Prepare_And_Invert(ThermoTables_Density,
 						ThermoTables_StaticEnergy);
+//cout << "PT" << endl;
 		PT_Interpolation_Matrix_Inverse[CurrentZone][i] =
 				Interpolation_Matrix_Prepare_And_Invert(ThermoTables_Pressure,
 						ThermoTables_Temperature);
+//cout << "PRHO" << endl;
 		Prho_Interpolation_Matrix_Inverse[CurrentZone][i] =
 				Interpolation_Matrix_Prepare_And_Invert(ThermoTables_Pressure,
 						ThermoTables_Density);
+//cout << "RHOT" << endl;
 		rhoT_Interpolation_Matrix_Inverse[CurrentZone][i] =
 				Interpolation_Matrix_Prepare_And_Invert(ThermoTables_Density,
 						ThermoTables_Temperature);
+//cout << "HS" << endl;
 		hs_Interpolation_Matrix_Inverse[CurrentZone][i] =
 				Interpolation_Matrix_Prepare_And_Invert(ThermoTables_Enthalpy,
 						ThermoTables_Entropy);
+//cout << "PS" << endl;
 		Ps_Interpolation_Matrix_Inverse[CurrentZone][i] =
 				Interpolation_Matrix_Prepare_And_Invert(ThermoTables_Pressure,
 						ThermoTables_Entropy);
@@ -605,17 +611,12 @@ void CLookUpTable::SetTDState_rhoe(su2double rho, su2double e) {
 	dTdrho_e = Interpolate_Function2D(ThermoTables_dTdrho_e, Weights);
 	dTde_rho = Interpolate_Function2D(ThermoTables_dTde_rho, Weights);
 	Cp = Interpolate_Function2D(ThermoTables_Cp, Weights);
-        dhdrho_P  = Interpolate_Function2D(ThermoTables_dhdrho_P, Weights);
-        dhdP_rho  = Interpolate_Function2D(ThermoTables_dhdP_rho, Weights);
-        dsdrho_P  = Interpolate_Function2D(ThermoTables_dsdrho_P, Weights);
-        dsdP_rho  = Interpolate_Function2D(ThermoTables_dsdP_rho, Weights);
 
 
 }
 
 void CLookUpTable::SetTDState_PT(su2double P, su2double T) {
 
-//        cout << " P T" << P << "  " << T << endl;
 	Get_Bounding_Simplex_From_TrapezoidalMap(PT_map, P, T);
 	Interpolation_Matrix_Inverse =
 			PT_Interpolation_Matrix_Inverse[CurrentZone][CurrentFace];
@@ -636,16 +637,11 @@ void CLookUpTable::SetTDState_PT(su2double P, su2double T) {
 	dTdrho_e = Interpolate_Function2D(ThermoTables_dTdrho_e, Weights);
 	dTde_rho = Interpolate_Function2D(ThermoTables_dTde_rho, Weights);
 	Cp = Interpolate_Function2D(ThermoTables_Cp, Weights);
-        dhdrho_P  = Interpolate_Function2D(ThermoTables_dhdrho_P, Weights);
-        dhdP_rho  = Interpolate_Function2D(ThermoTables_dhdP_rho, Weights);
-        dsdrho_P  = Interpolate_Function2D(ThermoTables_dsdrho_P, Weights);
-        dsdP_rho  = Interpolate_Function2D(ThermoTables_dsdP_rho, Weights);
 
 }
 
 void CLookUpTable::SetTDState_Prho(su2double P, su2double rho) {
 
-//        cout << " P rho" << P << "  " << rho << endl;
 	Get_Bounding_Simplex_From_TrapezoidalMap(Prho_map, P, rho);
 	Interpolation_Matrix_Inverse =
 			Prho_Interpolation_Matrix_Inverse[CurrentZone][CurrentFace];
@@ -666,15 +662,10 @@ void CLookUpTable::SetTDState_Prho(su2double P, su2double rho) {
 	dTdrho_e = Interpolate_Function2D(ThermoTables_dTdrho_e, Weights);
 	dTde_rho = Interpolate_Function2D(ThermoTables_dTde_rho, Weights);
 	Cp = Interpolate_Function2D(ThermoTables_Cp, Weights);
-        dhdrho_P  = Interpolate_Function2D(ThermoTables_dhdrho_P, Weights);
-        dhdP_rho  = Interpolate_Function2D(ThermoTables_dhdP_rho, Weights);
-        dsdrho_P  = Interpolate_Function2D(ThermoTables_dsdrho_P, Weights);
-        dsdP_rho  = Interpolate_Function2D(ThermoTables_dsdP_rho, Weights);
 }
 
 void CLookUpTable::SetEnergy_Prho(su2double P, su2double rho) {
 
-//        cout << "EN  P rho" << P << "  " << rho << endl;
 	Get_Bounding_Simplex_From_TrapezoidalMap(Prho_map, P, rho);
 	Interpolation_Matrix_Inverse =
 			Prho_Interpolation_Matrix_Inverse[CurrentZone][CurrentFace];
@@ -691,7 +682,6 @@ void CLookUpTable::SetEnergy_Prho(su2double P, su2double rho) {
 
 void CLookUpTable::SetTDState_hs(su2double h, su2double s) {
 
-//        cout << "  h s" << h << "  " << s << endl;
 	Get_Bounding_Simplex_From_TrapezoidalMap(hs_map, h, s);
 	Interpolation_Matrix_Inverse =
 			hs_Interpolation_Matrix_Inverse[CurrentZone][CurrentFace];
@@ -712,16 +702,11 @@ void CLookUpTable::SetTDState_hs(su2double h, su2double s) {
 	dTdrho_e = Interpolate_Function2D(ThermoTables_dTdrho_e, Weights);
 	dTde_rho = Interpolate_Function2D(ThermoTables_dTde_rho, Weights);
 	Cp = Interpolate_Function2D(ThermoTables_Cp, Weights);
-        dhdrho_P  = Interpolate_Function2D(ThermoTables_dhdrho_P, Weights);
-        dhdP_rho  = Interpolate_Function2D(ThermoTables_dhdP_rho, Weights);
-        dsdrho_P  = Interpolate_Function2D(ThermoTables_dsdrho_P, Weights);
-        dsdP_rho  = Interpolate_Function2D(ThermoTables_dsdP_rho, Weights);
 
 }
 
 void CLookUpTable::SetTDState_Ps(su2double P, su2double s) {
 
-//        cout << "  P s" << P << "  " << s << endl;
 	Get_Bounding_Simplex_From_TrapezoidalMap(Ps_map, P, s);
 	Interpolation_Matrix_Inverse =
 			Ps_Interpolation_Matrix_Inverse[CurrentZone][CurrentFace];
@@ -742,16 +727,11 @@ void CLookUpTable::SetTDState_Ps(su2double P, su2double s) {
 	dTdrho_e = Interpolate_Function2D(ThermoTables_dTdrho_e, Weights);
 	dTde_rho = Interpolate_Function2D(ThermoTables_dTde_rho, Weights);
 	Cp = Interpolate_Function2D(ThermoTables_Cp, Weights);
-        dhdrho_P  = Interpolate_Function2D(ThermoTables_dhdrho_P, Weights);
-        dhdP_rho  = Interpolate_Function2D(ThermoTables_dhdP_rho, Weights);
-        dsdrho_P  = Interpolate_Function2D(ThermoTables_dsdrho_P, Weights);
-        dsdP_rho  = Interpolate_Function2D(ThermoTables_dsdP_rho, Weights);
 
 }
 
 void CLookUpTable::SetTDState_rhoT(su2double rho, su2double T) {
 
-//        cout << " rho  T" << rho << "  " << T << endl;
 	Get_Bounding_Simplex_From_TrapezoidalMap(rhoT_map, rho, T);
 	Interpolation_Matrix_Inverse =
 			rhoT_Interpolation_Matrix_Inverse[CurrentZone][CurrentFace];
@@ -772,10 +752,6 @@ void CLookUpTable::SetTDState_rhoT(su2double rho, su2double T) {
 	dTdrho_e = Interpolate_Function2D(ThermoTables_dTdrho_e, Weights);
 	dTde_rho = Interpolate_Function2D(ThermoTables_dTde_rho, Weights);
 	Cp = Interpolate_Function2D(ThermoTables_Cp, Weights);
-        dhdrho_P  = Interpolate_Function2D(ThermoTables_dhdrho_P, Weights);
-        dhdP_rho  = Interpolate_Function2D(ThermoTables_dhdP_rho, Weights);
-        dsdrho_P  = Interpolate_Function2D(ThermoTables_dsdrho_P, Weights);
-        dsdP_rho  = Interpolate_Function2D(ThermoTables_dsdP_rho, Weights);
 
 }
 
@@ -788,14 +764,16 @@ inline void CLookUpTable::Gaussian_Inverse(unsigned int nDim) {
 	for (int i = 0; i < nDim; i++) {
 		for (int j = 0; j < nDim; j++) {
 			temp[i][j] = Interpolation_Matrix[i][j];
+//cout << "Temp1: " << i << " " << j <<  " " << temp[i][j] << endl;
 			temp[i][nDim + j] = 0;
+//cout << "Temp2: " << i << " " << nDim+j <<  " " << temp[i][nDim+j] << endl;
 		}
 		temp[i][nDim + i] = 1;
 	}
 
 	su2double max_val;
 	int max_idx;
-	//Pivot each column such that the largest number possible divides the oter rows
+	//Pivot each column such that the largest number possible divides the other rows
 	//The goal is to avoid zeros or small numbers in division.
 	for (int k = 0; k < nDim - 1; k++) {
 		max_idx = k;
@@ -811,10 +789,13 @@ inline void CLookUpTable::Gaussian_Inverse(unsigned int nDim) {
 		for (int j = 0; j < (nDim * 2); j++) {
 			su2double d = temp[k][j];
 			temp[k][j] = temp[max_idx][j];
+//cout << "Temp3: " << k << " " << k <<  " " << temp[k][j] << endl;
 			temp[max_idx][j] = d;
 		}
 		//Subtract the moved row from all other rows
 		for (int i = k + 1; i < nDim; i++) {
+//cout << "Temp4: " << i << " " << k <<  " " << temp[i][k] << endl;
+//cout << "Temp5: " << k << " " << k <<  " " << temp[k][k] << endl;
 			su2double c = temp[i][k] / temp[k][k];
 			for (int j = 0; j < (nDim * 2); j++) {
 				temp[i][j] = temp[i][j] - temp[k][j] * c;
@@ -856,8 +837,8 @@ vector<su2double> CLookUpTable::Evaluate_Interpolation_Vector(su2double x,
 	interpolation_vector[0] = 1;
 	interpolation_vector[1] = x;
 	interpolation_vector[2] = y;
-//	interpolation_vector[3] = x * y;
-//	interpolation_vector[4] = y * y;
+	interpolation_vector[3] = x * x;
+	interpolation_vector[4] = y * y;
 //	interpolation_vector[5] = x * y * y;
 //	interpolation_vector[6] = x * x;
 //	interpolation_vector[7] = x * x * y;
@@ -1064,10 +1045,6 @@ void CLookUpTable::LookUpTable_Load_TEC(std::string filename) {
 				in >> ThermoTables_Temperature[zone_scanned][j];
 				in >> ThermoTables_StaticEnergy[zone_scanned][j];
 				in >> ThermoTables_Enthalpy[zone_scanned][j];
-				in >> ThermoTables_dhdrho_P[zone_scanned][j];
-				in >> ThermoTables_dhdP_rho[zone_scanned][j];
-				in >> ThermoTables_dsdrho_P[zone_scanned][j];
-				in >> ThermoTables_dsdP_rho[zone_scanned][j];
 			}
 			//Skip empty line
 			getline(table, line);
@@ -1123,14 +1100,6 @@ void CLookUpTable::LookUpTable_Malloc(unsigned int Index_of_Zone) {
 			nTable_Zone_Stations[Index_of_Zone], 0);
 	ThermoTables_Kt[Index_of_Zone] = vector<su2double>(
 			nTable_Zone_Stations[Index_of_Zone], 0);
-	ThermoTables_dhdrho_P[Index_of_Zone] = vector<su2double>(
-			nTable_Zone_Stations[Index_of_Zone], 0);
-	ThermoTables_dhdP_rho[Index_of_Zone] = vector<su2double>(
-			nTable_Zone_Stations[Index_of_Zone], 0);
-	ThermoTables_dsdrho_P[Index_of_Zone] = vector<su2double>(
-			nTable_Zone_Stations[Index_of_Zone], 0);
-	ThermoTables_dsdP_rho[Index_of_Zone] = vector<su2double>(
-			nTable_Zone_Stations[Index_of_Zone], 0);
 	Table_Zone_Triangles[Index_of_Zone] = vector<vector<unsigned long> >(
 			nTable_Zone_Triangles[Index_of_Zone]);
 	for (int j = 0; j < nTable_Zone_Triangles[Index_of_Zone]; j++) {
@@ -1160,7 +1129,6 @@ void CLookUpTable::NonDimensionalise_Table_Values() {
 			ThermoTables_Temperature[i][j] /= Temperature_Reference_Value;
 			ThermoTables_StaticEnergy[i][j] /= Energy_Reference_Value;
 			ThermoTables_Enthalpy[i][j] /= Energy_Reference_Value;
-                        //TODO ADD NONDIM for enthalpy and entropy derivatives
 		}
 	}
 }

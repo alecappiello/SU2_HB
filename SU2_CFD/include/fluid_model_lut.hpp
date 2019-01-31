@@ -39,7 +39,6 @@
 #include <cmath>
 #include <vector>
 
-
 #define LEN_COMPONENTS 32
 
 #include "stdio.h"
@@ -154,11 +153,7 @@ protected:
 	ThermoTables_dmudT_rho[2], /*!< \brief Fluid derivative DmuDT_rho look up table values. */
 	ThermoTables_Kt[2], /*!< \brief Thermal Conductivity look up table values. */
 	ThermoTables_dktdrho_T[2], /*!< \brief Fluid derivative DktDrho_T look up table values. */
-	ThermoTables_dktdT_rho[2], /*!< \brief Fluid derivative DktDT_rho look up table values. */
-	ThermoTables_dhdrho_P[2], /*!< \brief Fluid derivative DpDd_e look up table values. */
-	ThermoTables_dhdP_rho[2], /*!< \brief Fluid derivative DpDe_d look up table values. */
-	ThermoTables_dsdrho_P[2], /*!< \brief Fluid derivative DTDd_e look up table values. */
-	ThermoTables_dsdP_rho[2]; /*!< \brief Fluid derivative DTDe_d look up table values. */
+	ThermoTables_dktdT_rho[2]; /*!< \brief Fluid derivative DktDT_rho look up table values. */
 
 	vector<vector<su2double> > Interpolation_Matrix; /*!< \brief The (Vandermonde) matrix for the interpolation (bilinear) */
 	vector<vector<su2double> > Interpolation_Matrix_Inverse; /*!< \brief Used to hold inverse of Interpolation_Matrix, and solution vector */
