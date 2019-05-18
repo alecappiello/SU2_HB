@@ -4144,7 +4144,8 @@ void CSurfaceMovement::SetExternal_Deformation(CGeometry *geometry, CConfig *con
   char buffer[50];
   string motion_filename, UnstExt, text_line;
   ifstream motion_file;
-  bool unsteady = config->GetUnsteady_Simulation();
+  bool unsteady = (config->GetUnsteady_Simulation() == DT_STEPPING_1ST)
+                          || (config->GetUnsteady_Simulation() == DT_STEPPING_2ND);
   bool adjoint = config->GetContinuous_Adjoint();
 
   /*--- Load stuff from config ---*/

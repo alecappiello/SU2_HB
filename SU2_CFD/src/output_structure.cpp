@@ -7883,7 +7883,7 @@ void COutput::SetBaselineResult_Files(CSolver **solver, CGeometry **geometry, CC
 }
 
 void COutput::SetMesh_Files(CGeometry **geometry, CConfig **config, unsigned short val_nZone, bool new_file, bool su2_file) {
-  
+
   int rank = MASTER_NODE;
 #ifdef HAVE_MPI
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
