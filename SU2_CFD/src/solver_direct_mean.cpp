@@ -5565,10 +5565,17 @@ void CEulerSolver::Pressure_Forces(CGeometry *geometry, CConfig *config) {
           }
           
           if(unsteady){
-        	  su2double *Grid_Vel;
-        	  Grid_Vel = geometry->node[iPoint]->GetGridVel();
-        	  for (iDim = 0; iDim<nDim; iDim++)
-        	          		  LocalWork += -Pressure * Normal[iDim] * factor * AxiFactor * Grid_Vel[iDim];
+            if (grid_movement){
+              su2double *Grid_Vel;
+              Grid_Vel = geometry->node[iPoint]->GetGridVel();
+              for (iDim = 0; iDim<nDim; iDim++)
+                            LocalWork += -Pressure * Normal[iDim] * factor * AxiFactor * Grid_Vel[iDim];
+            }
+            else{
+              for (iDim = 0; iDim<nDim; iDim++)
+                            LocalWork += -Pressure * Normal[iDim] * factor * AxiFactor;
+            }
+
           }
 
           /*--- Moment with respect to the reference axis ---*/
@@ -9733,7 +9740,7 @@ void CEulerSolver::BC_TurboRiemann(CGeometry *geometry, CSolver **solver_contain
   su2double *Velocity_b, Velocity2_b, Enthalpy_b, Energy_b, StaticEnergy_b, Density_b, Kappa_b, Chi_b, Pressure_b, Temperature_b;
   su2double *Velocity_e, Velocity2_e, Enthalpy_e, Entropy_e, Energy_e = 0.0, StaticEnthalpy_e, StaticEnergy_e, Density_e = 0.0, Pressure_e;
   su2double *Velocity_i, Velocity2_i, Enthalpy_i, Energy_i, StaticEnergy_i, Density_i, Kappa_i, Chi_i, Pressure_i, SoundSpeed_i;
-  su2double ProjVelocity_i;
+  su2double ProjVelocity_i, deltaT;
   su2double **P_Tensor, **invP_Tensor, *Lambda_i, **Jacobian_b, **DubDu, *dw, *u_e, *u_i, *u_b;
   su2double *gridVel;
   su2double *V_boundary, *V_domain, *S_boundary, *S_domain;
@@ -9747,6 +9754,7 @@ void CEulerSolver::BC_TurboRiemann(CGeometry *geometry, CSolver **solver_contain
   bool gravity = (config->GetGravityForce());
   bool tkeNeeded = (((config->GetKind_Solver() == RANS )|| (config->GetKind_Solver() == DISC_ADJ_RANS)) &&
       (config->GetKind_Turb_Model() == SST));
+  bool harmonic_balance = (config->GetUnsteady_Simulation() == HARMONIC_BALANCE);
 
   su2double *Normal, *turboNormal, *UnitNormal, *FlowDirMix, FlowDirMixMag, *turboVelocity;
   Normal = new su2double[nDim];
@@ -9772,6 +9780,13 @@ void CEulerSolver::BC_TurboRiemann(CGeometry *geometry, CSolver **solver_contain
   {
     P_Tensor[iVar] = new su2double[nVar];
     invP_Tensor[iVar] = new su2double[nVar];
+  }
+
+  if (harmonic_balance){
+    /*--- period of oscillation & compute time interval using nTimeInstances ---*/
+    su2double period = config->GetHarmonicBalance_Period();
+    period /= config->GetTime_Ref();
+    deltaT = period/(su2double)(config->GetnTimeInstances());
   }
 
   /*--- Loop over all the vertices on this boundary marker ---*/
@@ -9938,20 +9953,50 @@ void CEulerSolver::BC_TurboRiemann(CGeometry *geometry, CSolver **solver_contain
 
 
         case RADIAL_EQUILIBRIUM:
+          /* Hack to make Aero-Forcing working for now */
 
-          /*--- Retrieve the staic pressure for this boundary. ---*/
-          Pressure_e = RadialEquilibriumPressure[val_marker][iSpan];
-          Density_e = Density_i;
+          /*--- Retrieve the specified total conditions for this boundary. ---*/
+          if (gravity) P_Total = config->GetRiemann_Var1(Marker_Tag) - geometry->node[iPoint]->GetCoord(nDim-1)*STANDART_GRAVITY;/// check in which case is true (only freesurface?)
+          else P_Total  = config->GetRiemann_Var1(Marker_Tag);
+          T_Total  = config->GetRiemann_Var2(Marker_Tag);
+          Flow_Dir = config->GetRiemann_FlowDir(Marker_Tag);
+
+
+          /*--- Non-dim. the inputs if necessary. ---*/
+          P_Total /= config->GetPressure_Ref();
+          P_Total = P_Total+(P_Total*0.1*sin(6.2831853071796*deltaT*iZone));
+          T_Total /= config->GetTemperature_Ref();
+
+          /* --- Computes the total state --- */
+          FluidModel->SetTDState_PT(P_Total, T_Total);
+          Enthalpy_e = FluidModel->GetStaticEnergy()+ FluidModel->GetPressure()/FluidModel->GetDensity();
+          Entropy_e = FluidModel->GetEntropy();
 
           /* --- Compute the boundary state u_e --- */
-          FluidModel->SetTDState_Prho(Pressure_e, Density_e);
-          Velocity2_e = 0.0;
-          for (iDim = 0; iDim < nDim; iDim++) {
-            Velocity_e[iDim] = Velocity_i[iDim];
-            Velocity2_e += Velocity_e[iDim]*Velocity_e[iDim];
-          }
-          Energy_e = FluidModel->GetStaticEnergy() + 0.5*Velocity2_e;
+          Velocity2_e = Velocity2_i;
+          for (iDim = 0; iDim < nDim; iDim++)
+            turboVelocity[iDim] = sqrt(Velocity2_e)*Flow_Dir[iDim];
+          ComputeBackVelocity(turboVelocity,turboNormal, Velocity_e, config->GetMarker_All_TurbomachineryFlag(val_marker),config->GetKind_TurboMachinery(iZone));
+          StaticEnthalpy_e = Enthalpy_e - 0.5 * Velocity2_e;
+          FluidModel->SetTDState_hs(StaticEnthalpy_e, Entropy_e);
+          Density_e = FluidModel->GetDensity();
+          StaticEnergy_e = FluidModel->GetStaticEnergy();
+          Energy_e = StaticEnergy_e + 0.5 * Velocity2_e;
+          if (tkeNeeded) Energy_e += GetTke_Inf();
           break;
+//          /*--- Retrieve the staic pressure for this boundary. ---*/
+//          Pressure_e = RadialEquilibriumPressure[val_marker][iSpan];
+//          Density_e = Density_i;
+//
+//          /* --- Compute the boundary state u_e --- */
+//          FluidModel->SetTDState_Prho(Pressure_e, Density_e);
+//          Velocity2_e = 0.0;
+//          for (iDim = 0; iDim < nDim; iDim++) {
+//            Velocity_e[iDim] = Velocity_i[iDim];
+//            Velocity2_e += Velocity_e[iDim]*Velocity_e[iDim];
+//          }
+//          Energy_e = FluidModel->GetStaticEnergy() + 0.5*Velocity2_e;
+//          break;
 
         default:
           cout << "Warning! Invalid Riemann input!" << endl;

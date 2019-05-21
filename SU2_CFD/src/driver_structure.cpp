@@ -361,13 +361,14 @@ bool harmonic_balance = config_container[ZONE_0]->GetUnsteady_Simulation() == HA
   }
 
 
-  if( !discrete_adjoint && !restart && harmonic_balance)
-    SetTimeSpectral_Velocities(false);
-
   /*---If the Grid Movement is static initialize the static mesh movment ---*/
   Kind_Grid_Movement = config_container[ZONE_0]->GetKind_GridMovement(ZONE_0);
   initStaticMovement = (config_container[ZONE_0]->GetGrid_Movement() && (Kind_Grid_Movement == MOVING_WALL
                         || Kind_Grid_Movement == ROTATING_FRAME || Kind_Grid_Movement == STEADY_TRANSLATION));
+
+  if( !discrete_adjoint && !restart && harmonic_balance)
+    if (config_container[ZONE_0]->GetGrid_Movement())
+      SetTimeSpectral_Velocities(false);
 
 
   if(initStaticMovement){
@@ -3693,7 +3694,7 @@ void CDriver::SetTimeSpectral_Velocities(bool reset){
 	    		  GridVel = geometry_container[iZone][iMGlevel]->node[iPoint]->GetGridVel();
 	    		  Coord = geometry_container[iZone][iMGlevel]->node[iPoint]->GetCoord();
 	    		  if (reset)
-	    			  geometry_container[iZone][iMGlevel]->node[iPoint]->SetGridVel(iDim, 0);//fitted_velocities[iZone]
+	    			  geometry_container[iZone][iMGlevel]->node[iPoint]->SetGridVel(iDim, 0.0);//fitted_velocities[iZone]
 	    		  else
 	    			  geometry_container[iZone][iMGlevel]->node[iPoint]->SetGridVel(iDim, fitted_velocities[iZone]);
 	    	  }
@@ -5944,8 +5945,9 @@ void CHBMultiZoneDriver::ResetMesh_HB(void){
 				}
 			}
 		}
-	}
-	SetTimeSpectral_Velocities(true);
+	}\
+	if (config_container[ZONE_0]->GetGrid_Movement())
+	  SetTimeSpectral_Velocities(true);
 	for (iZone = 0; iZone < nZone; iZone++) {
 	  grid_movement[iZone]->UpdateDualGrid(geometry_container[iZone][MESH_0], config_container[iZone]);
 	  geometry_container[iZone][MESH_0]->UpdateGeometry(geometry_container[iZone],config_container[iZone]);
@@ -6182,15 +6184,17 @@ void CDiscAdjHBMultiZone::SetRecording(unsigned short kind_recording){
   }
 
   ResetMesh_HB();
-  for (iZone = 0; iZone < nZone; iZone++)
-	  iteration_container[iZone]->SetGrid_Movement(geometry_container, surface_movement, grid_movement, FFDBox, solver_container, config_container, iZone, 0, 0, false);
-  if (rank == MASTER_NODE)
-    cout << " Updating turbovertex after rigid mesh transformation. " << endl;
-  for (iZone = 0; iZone < nZone; iZone++){
-    geometry_container[iZone][MESH_0]->UpdateTurboVertex(config_container[iZone], iZone, INFLOW);
-    geometry_container[iZone][MESH_0]->UpdateTurboVertex(config_container[iZone], iZone, OUTFLOW);
+  if(config_container[ZONE_0]->GetGrid_Movement()){
+    for (iZone = 0; iZone < nZone; iZone++)
+      iteration_container[iZone]->SetGrid_Movement(geometry_container, surface_movement, grid_movement, FFDBox, solver_container, config_container, iZone, 0, 0, false);
+    if (rank == MASTER_NODE)
+      cout << " Updating turbovertex after rigid mesh transformation. " << endl;
+    for (iZone = 0; iZone < nZone; iZone++){
+      geometry_container[iZone][MESH_0]->UpdateTurboVertex(config_container[iZone], iZone, INFLOW);
+      geometry_container[iZone][MESH_0]->UpdateTurboVertex(config_container[iZone], iZone, OUTFLOW);
+    }
+    SetTimeSpectral_Velocities(false);
   }
-  SetTimeSpectral_Velocities(false);
 
   /*--- Do one iteration of the direct flow solver ---*/
 
