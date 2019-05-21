@@ -5945,7 +5945,7 @@ void CHBMultiZoneDriver::ResetMesh_HB(void){
 				}
 			}
 		}
-	}\
+	}
 	if (config_container[ZONE_0]->GetGrid_Movement())
 	  SetTimeSpectral_Velocities(true);
 	for (iZone = 0; iZone < nZone; iZone++) {
@@ -6182,9 +6182,9 @@ void CDiscAdjHBMultiZone::SetRecording(unsigned short kind_recording){
   for (iZone = 0; iZone < nZone; iZone++) {
     iteration_container[iZone]->SetDependencies(solver_container, geometry_container, config_container, iZone, kind_recording);
   }
-
-  ResetMesh_HB();
   if(config_container[ZONE_0]->GetGrid_Movement()){
+    ResetMesh_HB();
+
     for (iZone = 0; iZone < nZone; iZone++)
       iteration_container[iZone]->SetGrid_Movement(geometry_container, surface_movement, grid_movement, FFDBox, solver_container, config_container, iZone, 0, 0, false);
     if (rank == MASTER_NODE)
