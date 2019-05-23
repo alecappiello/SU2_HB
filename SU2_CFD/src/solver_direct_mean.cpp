@@ -9859,10 +9859,12 @@ void CEulerSolver::BC_TurboRiemann(CGeometry *geometry, CSolver **solver_contain
           T_Total  = config->GetRiemann_Var2(Marker_Tag);
           Flow_Dir = config->GetRiemann_FlowDir(Marker_Tag);
 
+          P_Total = P_Total+(P_Total*config->GetHarmonicBalance_InAmp()*sin(6.2831853071796*deltaT*iZone));
 
           /*--- Non-dim. the inputs if necessary. ---*/
           P_Total /= config->GetPressure_Ref();
           T_Total /= config->GetTemperature_Ref();
+
 
           /* --- Computes the total state --- */
           FluidModel->SetTDState_PT(P_Total, T_Total);
@@ -9955,6 +9957,8 @@ void CEulerSolver::BC_TurboRiemann(CGeometry *geometry, CSolver **solver_contain
         case RADIAL_EQUILIBRIUM:
           /* Hack to make Aero-Forcing working for now */
 
+          cout<<"I was called RADIAL_EQUILIBRIUM :: "<<endl;
+
           /*--- Retrieve the specified total conditions for this boundary. ---*/
           if (gravity) P_Total = config->GetRiemann_Var1(Marker_Tag) - geometry->node[iPoint]->GetCoord(nDim-1)*STANDART_GRAVITY;/// check in which case is true (only freesurface?)
           else P_Total  = config->GetRiemann_Var1(Marker_Tag);
@@ -9963,8 +9967,8 @@ void CEulerSolver::BC_TurboRiemann(CGeometry *geometry, CSolver **solver_contain
 
 
           /*--- Non-dim. the inputs if necessary. ---*/
+          P_Total = P_Total+(P_Total*0.0*sin(6.2831853071796*deltaT*iZone));
           P_Total /= config->GetPressure_Ref();
-          P_Total = P_Total+(P_Total*0.1*sin(6.2831853071796*deltaT*iZone));
           T_Total /= config->GetTemperature_Ref();
 
           /* --- Computes the total state --- */

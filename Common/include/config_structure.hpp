@@ -166,6 +166,7 @@ private:
   unsigned short Kind_Adaptation;	/*!< \brief Kind of numerical grid adaptation. */
   unsigned short nTimeInstances;  /*!< \brief Number of periodic time instances for  harmonic balance. */
   su2double HarmonicBalance_Period;		/*!< \brief Period of oscillation to be used with harmonic balance computations. */
+  su2double HarmonicBalance_InAmp;   /*!< \brief Period of oscillation to be used with harmonic balance computations. */
   su2double New_Elem_Adapt;			/*!< \brief Elements to adapt in the numerical grid adaptation process. */
   su2double Delta_UnstTime,			/*!< \brief Time step for unsteady computations. */
   Delta_UnstTimeND;						/*!< \brief Time step for unsteady computations (non dimensional). */
@@ -2561,6 +2562,12 @@ public:
    */
   su2double GetHarmonicBalance_Period(void);
   
+  /*!
+   * \brief Retrieves the period of oscillations to be used with Harmonic Balance.
+   * \return: Period for Harmonic Balance.
+   */
+  su2double GetHarmonicBalance_InAmp(void);
+
   /*!
    * \brief Set the number of external iterations.
    * \note This is important in no time depending methods, where only
