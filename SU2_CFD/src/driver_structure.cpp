@@ -6346,6 +6346,9 @@ void CDiscAdjHBMultiZone::SetObjFunction(){
   case KINETIC_ENERGY_LOSS:
     solver_container[ZONE_0][MESH_0][FLOW_SOL]->AddTotal_ComboObj(output->GetTotalWorkDone_HB());
     break;
+  case NORMAL_GRID_VEL:
+    solver_container[ZONE_0][MESH_0][FLOW_SOL]->AddTotal_ComboObj(output->GetTotalWorkDone_HB());
+    break;
   default:
     break;
   }

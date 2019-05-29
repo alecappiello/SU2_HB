@@ -716,12 +716,13 @@ void CVolumetricMovement::SetTangential_BC(CGeometry *geometry, CConfig *config,
     }
     TransformationMatrix[iVar][iVar] = 1.0;
   }
-
+cout<<"At Set Tangential BC\n";
   for (iNodes = 0; iNodes < nNodes; iNodes++) {
     for (iMarker = 0; iMarker < config->GetnMarker_All(); iMarker++){
       if ((config->GetMarker_All_DeformTangential(iMarker) == YES) ||
           (config->GetMarker_All_DeformNormal(iMarker) == YES) ||
           (config->GetMarker_All_KindBC(iMarker) == SYMMETRY_PLANE)){
+        cout<<"I was called \n";
 
         iVertex = geometry->node[PointCorners[iNodes]]->GetVertex(iMarker);
 

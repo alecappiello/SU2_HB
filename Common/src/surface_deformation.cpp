@@ -4204,7 +4204,7 @@ void CSurfaceMovement::SetExternal_Deformation(CGeometry *geometry, CConfig *con
     if (nDim == 2) point_line >> iPoint >> NewCoord[0] >> NewCoord[1];
     if (nDim == 3) point_line >> iPoint >> NewCoord[0] >> NewCoord[1] >> NewCoord[2];
     for (iMarker = 0; iMarker < config->GetnMarker_All(); iMarker++) {
-      if (config->GetMarker_All_Moving(iMarker) == YES) {
+      if (config->GetMarker_All_DV(iMarker) == YES) {
         for (iVertex = 0; iVertex < geometry->nVertex[iMarker]; iVertex++) {
           jPoint = geometry->vertex[iMarker][iVertex]->GetNode();
           GlobalIndex = geometry->node[jPoint]->GetGlobalIndex();

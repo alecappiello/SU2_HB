@@ -5564,18 +5564,32 @@ void CEulerSolver::Pressure_Forces(CGeometry *geometry, CConfig *config) {
             ForceInviscid[iDim] += Force[iDim];
           }
           
-          if(unsteady){
-            if (grid_movement){
-              su2double *Grid_Vel;
-              Grid_Vel = geometry->node[iPoint]->GetGridVel();
-              for (iDim = 0; iDim<nDim; iDim++)
-                            LocalWork += -Pressure * Normal[iDim] * factor * AxiFactor * Grid_Vel[iDim];
+          switch (config->GetKind_ObjFunc()){
+          case KINETIC_ENERGY_LOSS:{
+            if(unsteady){
+              if(grid_movement){
+                su2double *Grid_Vel;
+                Grid_Vel = geometry->node[iPoint]->GetGridVel();
+                for (iDim = 0; iDim<nDim; iDim++)
+                  LocalWork += -Pressure * Normal[iDim] * factor * AxiFactor * Grid_Vel[iDim];
+              }
+              else{
+                for (iDim = 0; iDim<nDim; iDim++)
+                  LocalWork += -Pressure * Normal[iDim] * factor * AxiFactor;
+              }
             }
-            else{
-              for (iDim = 0; iDim<nDim; iDim++)
-                            LocalWork += -Pressure * Normal[iDim] * factor * AxiFactor;
-            }
-
+            break;
+          }
+          case NORMAL_GRID_VEL:
+          {
+            su2double *Grid_Vel;
+            Grid_Vel = geometry->node[iPoint]->GetGridVel();
+            for (iDim = 0; iDim<nDim; iDim++)
+              LocalWork += Grid_Vel[iDim] * Normal[iDim];
+            break;
+          }
+          default:
+            break;
           }
 
           /*--- Moment with respect to the reference axis ---*/

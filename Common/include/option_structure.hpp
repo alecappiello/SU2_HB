@@ -1057,7 +1057,6 @@ enum ENUM_OBJECTIVE {
   SURFACE_TOTAL_PRESSURE = 28, 	    /*!< \brief Total Pressure objective function definition. */
   SURFACE_STATIC_PRESSURE = 29,      /*!< \brief Static Pressure objective function definition. */
   SURFACE_MASSFLOW = 30,           /*!< \brief Mass Flow Rate objective function definition. */
-  SURFACE_MACH = 51,           /*!< \brief Mach number objective function definition. */
   CUSTOM_OBJFUNC = 31, 	           /*!< \brief Custom objective function definition. */
   TOTAL_PRESSURE_LOSS = 39,
   KINETIC_ENERGY_LOSS = 40,
@@ -1070,7 +1069,9 @@ enum ENUM_OBJECTIVE {
   MASS_FLOW_IN = 47,
   MASS_FLOW_OUT = 48,
   PRESSURE_RATIO = 49,
-  ENTROPY_GENERATION = 50
+  ENTROPY_GENERATION = 50,
+  SURFACE_MACH = 51,             /*!< \brief Mach number objective function definition. */
+  NORMAL_GRID_VEL = 52
 };
 
 static const map<string, ENUM_OBJECTIVE> Objective_Map = CCreateMap<string, ENUM_OBJECTIVE>
@@ -1109,6 +1110,7 @@ static const map<string, ENUM_OBJECTIVE> Objective_Map = CCreateMap<string, ENUM
 ("MASS_FLOW_OUT", MASS_FLOW_OUT)
 ("PRESSURE_RATIO",  PRESSURE_RATIO)
 ("ENTROPY_GENERATION",  ENTROPY_GENERATION)
+("NORMAL_GRID_VEL",  NORMAL_GRID_VEL)
 ("KINETIC_ENERGY_LOSS", KINETIC_ENERGY_LOSS);
 
 /*!

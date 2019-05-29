@@ -6268,6 +6268,7 @@ string CConfig::GetObjFunc_Extension(string val_filename) {
       case MASS_FLOW_IN:            AdjExt = "_mfi";       break;
       case MASS_FLOW_OUT:           AdjExt = "_mfo";       break;
       case ENTROPY_GENERATION:      AdjExt = "_entg";      break;
+      case NORMAL_GRID_VEL:         AdjExt = "_gridvel";   break;
       }
     }
     else{
