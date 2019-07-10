@@ -699,7 +699,7 @@ void COutput::SetSurfaceCSV_Flow(CConfig *config, CGeometry *geometry,
   SU2_MPI::Gather(Buffer_Send_Normal_z, MaxLocalVertex_Surface, MPI_DOUBLE, Buffer_Recv_Normal_z, MaxLocalVertex_Surface, MPI_DOUBLE, MASTER_NODE, MPI_COMM_WORLD);
   SU2_MPI::Gather(Buffer_Send_GridVel_x, MaxLocalVertex_Surface, MPI_DOUBLE, Buffer_Recv_GridVel_x, MaxLocalVertex_Surface, MPI_DOUBLE, MASTER_NODE, MPI_COMM_WORLD);
   SU2_MPI::Gather(Buffer_Send_GridVel_y, MaxLocalVertex_Surface, MPI_DOUBLE, Buffer_Recv_GridVel_y, MaxLocalVertex_Surface, MPI_DOUBLE, MASTER_NODE, MPI_COMM_WORLD);
-  if (nDim == 3) SU2_MPI::Gather(Buffer_Send_GridVel_z, MaxLocalVertex_Surface, MPI_DOUBLE, Buffer_Recv_GridVel_z, MaxLocalVertex_Surface, MPI_DOUBLE, MASTER_NODE, MPI_COMM_WORLD);
+  //if (nDim == 3) SU2_MPI::Gather(Buffer_Send_GridVel_z, MaxLocalVertex_Surface, MPI_DOUBLE, Buffer_Recv_GridVel_z, MaxLocalVertex_Surface, MPI_DOUBLE, MASTER_NODE, MPI_COMM_WORLD);
   if (solver == EULER) SU2_MPI::Gather(Buffer_Send_Mach, MaxLocalVertex_Surface, MPI_DOUBLE, Buffer_Recv_Mach, MaxLocalVertex_Surface, MPI_DOUBLE, MASTER_NODE, MPI_COMM_WORLD);
   if ((solver == NAVIER_STOKES) || (solver == RANS)) {
     SU2_MPI::Gather(Buffer_Send_SkinFriction_x, MaxLocalVertex_Surface, MPI_DOUBLE, Buffer_Recv_SkinFriction_x, MaxLocalVertex_Surface, MPI_DOUBLE, MASTER_NODE, MPI_COMM_WORLD);

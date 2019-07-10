@@ -626,6 +626,13 @@ public:
 
   void ComputeSolid_Wall_Distance(CGeometry *geometry, CConfig *config, su2double &MinDistance, su2double &MaxDistance);
 
+  su2double Get_Tangent3D(su2double* Normal, su2double* t1, su2double* t2);
+  su2double Get_Tangent2D(su2double* Normal, su2double* t1);
+  void Transform_DoFs(CGeometry *geometry, CConfig *config, CSysVector& vector, bool transpose);
+
+  void SetTangential_BC(CGeometry *geometry, CConfig *config, su2double **StiffMatrix_Elem, unsigned long PointCorners[8], su2double CoordCorners[8][3],
+  unsigned short nNodes);
+
 };
 
 
