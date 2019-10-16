@@ -3608,9 +3608,30 @@ su2double CDriver::SetVertexVarCoord(unsigned short iMarker, unsigned short iVer
 
 void CDriver::SetTimeSpectral_Velocities(bool reset){
 
-	cout<<"\n\n\n At SET TIME SPECTRAL VELOCITIES :: CDrive \n\n\n";
 	  unsigned short iZone, jDegree, iDim, iMGlevel;
 	  unsigned short nDim = geometry_container[ZONE_0][MESH_0]->GetnDim();
+
+	int rank = 1;
+
+    if (rank == MASTER_NODE ) {
+      cout << endl << " Setting rotating frame grid velocities";
+      cout << " for zone " << iZone << "." << endl;
+    }
+
+    /*--- Set the grid velocities on all multigrid levels for a steadily
+         rotating reference frame. ---*/
+
+    for (iZone = 0; iZone< nZone; iZone++){
+		for (iMGlevel = 0; iMGlevel <= config_container[ZONE_0]->GetnMGLevels(); iMGlevel++){
+		  geometry_container[iZone][iMGlevel]->SetRotationalVelocity(config_container[ZONE_0], ZONE_0, true);
+		  geometry_container[iZone][iMGlevel]->SetShroudVelocity(config_container[ZONE_0]);
+		}
+		cout<<"NZone Mesh "<<nZone<<" iZone "<<iZone<<endl;
+    }
+
+    config_container[ZONE_0]->SetKind_GridMovement(ZONE_0, ROTATING_FRAME);
+
+	cout<<"\n\n\n At SET TIME SPECTRAL VELOCITIES :: CDrive \n\n\n";
 
 	  su2double angular_interval = 2.0*PI_NUMBER/(su2double)(nZone);
 	  su2double *Coord;
@@ -3694,9 +3715,9 @@ void CDriver::SetTimeSpectral_Velocities(bool reset){
 	    		  GridVel = geometry_container[iZone][iMGlevel]->node[iPoint]->GetGridVel();
 	    		  Coord = geometry_container[iZone][iMGlevel]->node[iPoint]->GetCoord();
 	    		  if (reset)
-	    			  geometry_container[iZone][iMGlevel]->node[iPoint]->SetGridVel(iDim, 0.0);//fitted_velocities[iZone]
+	    			  geometry_container[iZone][iMGlevel]->node[iPoint]->AddGridVel(iDim, 0.0);//fitted_velocities[iZone]
 	    		  else
-	    			  geometry_container[iZone][iMGlevel]->node[iPoint]->SetGridVel(iDim, fitted_velocities[iZone]);
+	    			  geometry_container[iZone][iMGlevel]->node[iPoint]->AddGridVel(iDim, fitted_velocities[iZone]);
 	    	  }
 	      }
 	    }

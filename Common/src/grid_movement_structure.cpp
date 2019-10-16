@@ -3749,7 +3749,7 @@ su2double CElasticityMovement::Get_Tangent3D(su2double* Normal, su2double* t1, s
 //    for (iDim = 0; iDim < nDim; iDim++) t1[iDim] = nCrossK[iDim];
 //  }
 
-//  cout<<"t1 :: "<< t1[0] << " "<<t1[1] << " "<<t1[2] << " "<<endl;
+  cout<<"t1 :: "<< t1[0] << " "<<t1[1] << " "<<t1[2] << " "<<endl;
 //  t1[0] = 0.0; t1[1] = 0.0; t1[2] = 1.0;
 
   /*--- Compute tangential vector t2 ---*/
