@@ -3671,7 +3671,7 @@ void CDriver::SetTimeSpectral_Velocities(bool reset){
 	      for (iDim = 0; iDim < nDim; iDim++) {
 
 	        if (iDim == 1)
-	            Trans_Vel = 0.0; //xDot;
+	            Trans_Vel = xDot;
 	        else
 	          Trans_Vel = 0.0;
 
