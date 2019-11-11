@@ -121,6 +121,8 @@ inline void CPoint::AddCoord_Sum(su2double *val_coord_sum) {
 
 inline void CPoint::SetGridVel(unsigned short val_dim, su2double val_gridvel) { GridVel[val_dim] = val_gridvel;}
 
+inline void CPoint::AddGridVel(unsigned short val_dim, su2double val_gridvel) { GridVel[val_dim] += val_gridvel;}
+
 inline void CPoint::SetGridVel_Grad(unsigned short val_var, unsigned short val_dim, su2double val_value) { GridVel_Grad[val_var][val_dim] = val_value; }
 
 inline void CPoint::SetChildren_CV (unsigned short val_nchildren_CV, unsigned long val_children_CV) {

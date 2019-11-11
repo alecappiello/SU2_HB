@@ -5575,7 +5575,8 @@ void CEulerSolver::Pressure_Forces(CGeometry *geometry, CConfig *config) {
               }
               else{
                 for (iDim = 0; iDim<nDim; iDim++)
-                  LocalWork += -Pressure * Normal[iDim] * factor * AxiFactor;
+                  LocalWork += -Pressure * factor * AxiFactor * Normal[iDim];
+//                cout<<"Check "<<-Pressure<< Normal[iDim]<<endl;
               }
             }
             break;
@@ -9873,8 +9874,9 @@ void CEulerSolver::BC_TurboRiemann(CGeometry *geometry, CSolver **solver_contain
           T_Total  = config->GetRiemann_Var2(Marker_Tag);
           Flow_Dir = config->GetRiemann_FlowDir(Marker_Tag);
 
-          P_Total = P_Total+(P_Total*config->GetHarmonicBalance_InAmp()*sin(6.2831853071796*deltaT*iZone));
-
+          P_Total = P_Total+(P_Total*config->GetHarmonicBalance_InAmp()*sin((config->GetOmega_HB()[1]*deltaT*iZone)+0.174533));
+//          cout<<"Total Pressure "<<iZone<<" "<<P_Total<<endl;
+//          cout<<"HB_Omega :: "<<config->GetOmega_HB()[1]<<endl;
           /*--- Non-dim. the inputs if necessary. ---*/
           P_Total /= config->GetPressure_Ref();
           T_Total /= config->GetTemperature_Ref();
@@ -9888,7 +9890,7 @@ void CEulerSolver::BC_TurboRiemann(CGeometry *geometry, CSolver **solver_contain
           /* --- Compute the boundary state u_e --- */
           Velocity2_e = Velocity2_i;
           for (iDim = 0; iDim < nDim; iDim++)
-            turboVelocity[iDim] = sqrt(Velocity2_e)*Flow_Dir[iDim];
+            turboVelocity[iDim] = sqrt(Velocity2_e)*Flow_Dir[iDim];//*(1+config->GetHarmonicBalance_InAmp()*sin((config->GetOmega_HB()[1]*deltaT*iZone)+0.174533));
           ComputeBackVelocity(turboVelocity,turboNormal, Velocity_e, config->GetMarker_All_TurbomachineryFlag(val_marker),config->GetKind_TurboMachinery(iZone));
           StaticEnthalpy_e = Enthalpy_e - 0.5 * Velocity2_e;
           FluidModel->SetTDState_hs(StaticEnthalpy_e, Entropy_e);

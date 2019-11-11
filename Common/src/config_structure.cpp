@@ -1019,7 +1019,7 @@ void CConfig::SetConfig_Options(unsigned short val_iZone, unsigned short val_nZo
   /* DESCRIPTION: Time period for Harmonic Balance wihtout moving meshes */
   addDoubleOption("HB_PERIOD", HarmonicBalance_Period, -1.0);
   /* DESCRIPTION: Amplitude of intlet  */
-    addDoubleOption("HB_INLET_AMP", HarmonicBalance_InAmp, -1.0);
+    addDoubleOption("HB_INLET_AMP", HarmonicBalance_InAmp, 0.0);
   /* DESCRIPTION:  Turn on/off harmonic balance preconditioning */
   addBoolOption("HB_PRECONDITION", HB_Precondition, false);
   /* DESCRIPTION: Iteration number to begin unsteady restarts (dual time method) */

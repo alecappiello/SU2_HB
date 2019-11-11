@@ -254,7 +254,7 @@ void COutput::ComputeTurboPerformance(CSolver *solver_container, CGeometry *geom
       TotalWorkDone_S[nMarkerTurboPerf*iTimeInstance +  iMarkerTP][nSpanWiseSections] = solver_container->GetWorkDone(iMarkerTP,iSpan);
       TotalWorkDone_D[nMarkerTurboPerf*iTimeInstance +  iMarkerTP][nSpanWiseSections]   = EulerianWork[nMarkerTurboPerf*iTimeInstance +  iMarkerTP][iSpan]*MassFlowOut[nMarkerTurboPerf*iTimeInstance + iMarkerTP][iSpan];
       if((config->GetUnsteady_Simulation()!=NO))
-    	  TotalWorkDonePerCyc_S[nMarkerTurboPerf*iTimeInstance +  iMarkerTP][nSpanWiseSections]           = solver_container->GetWorkDonePerCycle(iMarkerTP,iSpan);
+    	  TotalWorkDonePerCyc_S[nMarkerTurboPerf*iTimeInstance +  iMarkerTP][nSpanWiseSections]           = 0.0;//solver_container->GetWorkDonePerCycle(iMarkerTP,iSpan);
     }
   }
 

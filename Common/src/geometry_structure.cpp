@@ -13925,8 +13925,16 @@ void CPhysicalGeometry::SetTranslationalVelocity(CConfig *config, unsigned short
   
   unsigned short iDim;
   unsigned long iPoint;
-  su2double xDot[3] = {0.0,0.0,0.0};
-  
+  su2double xDot[3] = {0.0,0.0,0.0}, deltaT = 0.0;
+  bool harmonic_balance = (config->GetUnsteady_Simulation() == HARMONIC_BALANCE);
+
+  if (harmonic_balance){
+    /*--- period of oscillation & compute time interval using nTimeInstances ---*/
+    su2double period = config->GetHarmonicBalance_Period();
+    period /= config->GetTime_Ref();
+    deltaT = period/(su2double)(config->GetnTimeInstances());
+  }
+
   int rank = MASTER_NODE;
 #ifdef HAVE_MPI
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -13935,7 +13943,7 @@ void CPhysicalGeometry::SetTranslationalVelocity(CConfig *config, unsigned short
   /*--- Get the translational velocity vector from config ---*/
   
   xDot[0] = config->GetTranslation_Rate_X(val_iZone)/config->GetVelocity_Ref();
-  xDot[1] = config->GetTranslation_Rate_Y(val_iZone)/config->GetVelocity_Ref();
+  xDot[1] = config->GetTranslation_Rate_Y(val_iZone)/config->GetVelocity_Ref();//*(1+config->GetHarmonicBalance_InAmp()*sin((config->GetOmega_HB()[1]*deltaT*val_iZone)+0.174533))/config->GetVelocity_Ref();
   xDot[2] = config->GetTranslation_Rate_Z(val_iZone)/config->GetVelocity_Ref();
   
   /*--- Print some information to the console ---*/
