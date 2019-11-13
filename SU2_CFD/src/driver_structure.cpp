@@ -3607,7 +3607,6 @@ su2double CDriver::SetVertexVarCoord(unsigned short iMarker, unsigned short iVer
 }
 
 void CDriver::SetTimeSpectral_Velocities(bool reset){
-
 	cout<<"\n\n\n At SET TIME SPECTRAL VELOCITIES :: CDrive \n\n\n";
 	  unsigned short iZone, jDegree, iDim, iMGlevel;
 	  unsigned short nDim = geometry_container[ZONE_0][MESH_0]->GetnDim();
@@ -3703,7 +3702,7 @@ void CDriver::SetTimeSpectral_Velocities(bool reset){
 	    		  if (reset)
 	    			  geometry_container[iZone][iMGlevel]->node[iPoint]->SetGridVel(iDim, 0.0);//fitted_velocities[iZone]
 	    		  else
-	    			  geometry_container[iZone][iMGlevel]->node[iPoint]->SetGridVel(iDim, fitted_velocities[iZone]+Trans_Vel*(1+config_container[ZONE_0]->GetHarmonicBalance_InAmp()*sin((config_container[ZONE_0]->GetOmega_HB()[1]*deltaT*iZone)+0.174533)));
+	    			  geometry_container[iZone][iMGlevel]->node[iPoint]->SetGridVel(iDim, fitted_velocities[iZone]+Trans_Vel);
 
 	    	  }
 	      }
@@ -5918,7 +5917,7 @@ void CHBMultiZoneDriver::SetTimeSpectral_Velocities(bool reset){
             if (reset)
               geometry_container[iZone][iMGlevel]->node[iPoint]->SetGridVel(iDim, 0.0);//fitted_velocities[iZone]
             else
-              geometry_container[iZone][iMGlevel]->node[iPoint]->SetGridVel(iDim, fitted_velocities[iZone]+Trans_Vel*(1+config_container[ZONE_0]->GetHarmonicBalance_InAmp()*sin((config_container[ZONE_0]->GetOmega_HB()[1]*deltaT*iZone)+0.174533)));
+              geometry_container[iZone][iMGlevel]->node[iPoint]->SetGridVel(iDim, fitted_velocities[iZone]+Trans_Vel);
 
           }
         }
@@ -6197,7 +6196,7 @@ void CDiscAdjHBMultiZone::SetRecording(unsigned short kind_recording){
   for (iZone = 0; iZone < nZone; iZone++) {
     iteration_container[iZone]->SetDependencies(solver_container, geometry_container, config_container, iZone, kind_recording);
   }
-  if(config_container[ZONE_0]->GetKind_GridMovement(ZONE_0) == TURBO_VIBRATION){
+  if(config_container[ZONE_0]->GetGrid_Movement()){
     ResetMesh_HB();
 
     for (iZone = 0; iZone < nZone; iZone++)

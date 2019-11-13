@@ -5413,6 +5413,7 @@ void CEulerSolver::Pressure_Forces(CGeometry *geometry, CConfig *config) {
   string Marker_Tag, Monitoring_Tag;
   su2double MomentX_Force[3] = {0.0,0.0,0.0}, MomentY_Force[3] = {0.0,0.0,0.0}, MomentZ_Force[3] = {0.0,0.0,0.0};
   su2double AxiFactor;
+  su2double xDot = config->GetTranslation_Rate_Y(ZONE_0)/config->GetVelocity_Ref(), Trans_Vel = 0.0;
   LocalWork=0.0;
 
 #ifdef HAVE_MPI
@@ -5560,6 +5561,10 @@ void CEulerSolver::Pressure_Forces(CGeometry *geometry, CConfig *config) {
            orientation of the normal (outward) ---*/
           
           for (iDim = 0; iDim < nDim; iDim++) {
+            if (iDim == 1)
+              Trans_Vel = xDot;
+            else
+              Trans_Vel = 0;
             Force[iDim] = -(Pressure - Pressure_Inf) * Normal[iDim] * factor * AxiFactor;
             ForceInviscid[iDim] += Force[iDim];
           }
