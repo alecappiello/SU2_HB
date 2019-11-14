@@ -779,7 +779,7 @@ void COutput::SetSurfaceCSV_Flow(CConfig *config, CGeometry *geometry,
 
         if (config->GetKind_ObjFunc()==NORMAL_GRID_VEL)
           SurfFlow_file << scientific << Normal_x*GridVel_x << ", " << Normal_y*GridVel_y << ", ";
-        else if (config->GetKind_ObjFunc()==KINETIC_ENERGY_LOSS && config->GetGrid_Movement()){
+        else if (config->GetKind_ObjFunc()==KINETIC_ENERGY_LOSS && config->GetKind_GridMovement(ZONE_0)==TURBO_VIBRATION){
 //          cout<<"IS THIS DAMPING ???? ";
           SurfFlow_file << scientific << GridVel_x << ", " << GridVel_y << ", ";
         }

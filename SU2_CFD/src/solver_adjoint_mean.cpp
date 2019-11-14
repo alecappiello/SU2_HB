@@ -2929,7 +2929,7 @@ void CAdjEulerSolver::Source_Residual(CGeometry *geometry, CSolver **solver_cont
   }
   
   if (harmonic_balance) {
-    
+
     su2double Volume, Source;
     
     /*--- loop over points ---*/

@@ -57,7 +57,7 @@ void CIntegration::Space_Integration(CGeometry *geometry,
                                      unsigned short iRKStep,
                                      unsigned short RunTime_EqSystem) {
   unsigned short iMarker, KindBC;
-  
+
   unsigned short MainSolver = config->GetContainerPosition(RunTime_EqSystem);
   bool dual_time = ((config->GetUnsteady_Simulation() == DT_STEPPING_1ST) ||
                     (config->GetUnsteady_Simulation() == DT_STEPPING_2ND));
