@@ -5430,7 +5430,7 @@ void CEulerSolver::Pressure_Forces(CGeometry *geometry, CConfig *config) {
   if (config->GetnMarker_Monitoring() != 0){
     Origin = config->GetRefOriginMoment(0);
   }
-  bool grid_movement        = config->GetGrid_Movement();
+  bool grid_movement        = config->GetKind_GridMovement(ZONE_0) == TURBO_VIBRATION;
   bool axisymmetric         = config->GetAxisymmetric();
   bool unsteady				= (config->GetUnsteady_Simulation()!=NO);
 
@@ -5561,10 +5561,6 @@ void CEulerSolver::Pressure_Forces(CGeometry *geometry, CConfig *config) {
            orientation of the normal (outward) ---*/
           
           for (iDim = 0; iDim < nDim; iDim++) {
-            if (iDim == 1)
-              Trans_Vel = xDot;
-            else
-              Trans_Vel = 0;
             Force[iDim] = -(Pressure - Pressure_Inf) * Normal[iDim] * factor * AxiFactor;
             ForceInviscid[iDim] += Force[iDim];
           }
@@ -5575,8 +5571,14 @@ void CEulerSolver::Pressure_Forces(CGeometry *geometry, CConfig *config) {
               if(grid_movement){
                 su2double *Grid_Vel;
                 Grid_Vel = geometry->node[iPoint]->GetGridVel();
-                for (iDim = 0; iDim<nDim; iDim++)
-                  LocalWork += -Pressure * Normal[iDim] * factor * AxiFactor * (Grid_Vel[iDim]+Trans_Vel);
+                for (iDim = 0; iDim<nDim; iDim++){
+                  if (iDim == 1)
+                    Trans_Vel = xDot;
+                  else
+                    Trans_Vel = 0;
+                  LocalWork += -Pressure * Normal[iDim] * factor * AxiFactor * (Grid_Vel[iDim]-Trans_Vel);
+                  //cout<<"xDot :: "<<iDim<<" "<<Grid_Vel[iDim]-Trans_Vel<<endl;
+                }
               }
               else{
                 for (iDim = 0; iDim<nDim; iDim++)
