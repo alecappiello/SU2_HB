@@ -674,6 +674,13 @@ public:
 	 * \param[in] val_gridvel - Value of the grid velocity.
 	 */	
 	void SetGridVel(unsigned short val_dim, su2double val_gridvel);
+
+  /*!
+   * \brief Set the value of the grid velocity at the point.
+   * \param[in] val_dim - Index of the coordinate.
+   * \param[in] val_gridvel - Value of the grid velocity.
+   */
+  void AddGridVel(unsigned short val_dim, su2double val_gridvel);
 	
 	/*! 
 	 * \overload

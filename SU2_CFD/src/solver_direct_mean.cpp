@@ -15488,7 +15488,7 @@ su2double CEulerSolver::GetWorkDone(unsigned short marker_val, unsigned short sp
 su2double CEulerSolver::GetWorkDonePerCycle(unsigned short marker_val, unsigned short span_val){
 	su2double WorkDoneTotal=0.0;
 		for (vector<su2double>::iterator iEW = WorkDonePerCycle.end()-1; iEW >= (WorkDonePerCycle.end()-steps_per_cycle); iEW--){
-			WorkDoneTotal +=*iEW;
+			WorkDoneTotal +=0.0;
 		}
 	return WorkDoneTotal/steps_per_cycle;
 }

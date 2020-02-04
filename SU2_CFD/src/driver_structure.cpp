@@ -3607,15 +3607,81 @@ su2double CDriver::SetVertexVarCoord(unsigned short iMarker, unsigned short iVer
 }
 
 void CDriver::SetTimeSpectral_Velocities(bool reset){
+  cout<< "Setting Rotational velocity \n";
+  unsigned long iPoint;
+  su2double RotVel[3], Distance[3], *Coord, Center[3], Omega[3], L_Ref;
+  unsigned short nDim = geometry_container[ZONE_0][MESH_0]->GetnDim();
 
-	cout<<"\n\n\n At SET TIME SPECTRAL VELOCITIES :: CDrive \n\n\n";
+  int rank = MASTER_NODE;
+#ifdef HAVE_MPI
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+#endif
+
+  /*--- Center of rotation & angular velocity vector from config ---*/
+
+  Center[0] = config_container[ZONE_0]->GetMotion_Origin_X(ZONE_0);
+  Center[1] = config_container[ZONE_0]->GetMotion_Origin_Y(ZONE_0);
+  Center[2] = config_container[ZONE_0]->GetMotion_Origin_Z(ZONE_0);
+  Omega[0]  = config_container[ZONE_0]->GetRotation_Rate_X(ZONE_0)/config_container[ZONE_0]->GetOmega_Ref();
+  Omega[1]  = config_container[ZONE_0]->GetRotation_Rate_Y(ZONE_0)/config_container[ZONE_0]->GetOmega_Ref();
+  Omega[2]  = config_container[ZONE_0]->GetRotation_Rate_Z(ZONE_0)/config_container[ZONE_0]->GetOmega_Ref();
+  L_Ref     = config_container[ZONE_0]->GetLength_Ref();
+
+  /*--- Print some information to the console ---*/
+
+  if (rank == MASTER_NODE) {
+    cout << " Rotational origin (x, y, z): ( " << Center[0] << ", " << Center[1];
+    cout << ", " << Center[2] << " )" << endl;
+    cout << " Angular velocity about x, y, z axes: ( " << Omega[0] << ", ";
+    cout << Omega[1] << ", " << Omega[2] << " ) rad/s" << endl;
+  }
+
+  /*--- Loop over all nodes and set the rotational velocity ---*/
+  for (unsigned short iMGlevel = 0; iMGlevel <= config_container[ZONE_0]->GetnMGLevels(); iMGlevel++) {
+
+    /*--- Loop over each node in the volume mesh ---*/
+    for (iZone = 0; iZone < nZone; iZone++) {
+
+
+      for (iPoint = 0; iPoint < geometry_container[ZONE_0][iMGlevel]->GetnPoint(); iPoint++) {
+
+    /*--- Get the coordinates of the current node ---*/
+
+    Coord = geometry_container[iZone][iMGlevel]->node[iPoint]->GetCoord();
+
+    /*--- Calculate the non-dim. distance from the rotation center ---*/
+
+    Distance[0] = (Coord[0]-Center[0])/L_Ref;
+    Distance[1] = (Coord[1]-Center[1])/L_Ref;
+    Distance[2] = 0.0;
+    if (nDim == 3)
+      Distance[2] = (Coord[2]-Center[2])/L_Ref;
+
+    /*--- Calculate the angular velocity as omega X r ---*/
+//    cout<< "Omega :: "<<Omega[2]<<endl;
+//    cout<<"Dist :: "<<Distance[0]<<" "<<Distance[1]<<endl;
+    RotVel[0] = Omega[1]*(Distance[2]) - Omega[2]*(Distance[1]);
+    RotVel[1] = Omega[2]*(Distance[0]) - Omega[0]*(Distance[2]);
+    RotVel[2] = 0.0;
+    if (nDim == 3)
+      RotVel[2] = Omega[0]*(Distance[1]) - Omega[1]*(Distance[0]);
+
+    /*--- Store the grid velocity at this node ---*/
+
+    geometry_container[iZone][iMGlevel]->node[iPoint]->SetGridVel(RotVel);
+
+      }
+    }
+  }
+
+	cout<<"\n At SET TIME SPECTRAL VELOCITIES :: CDrive \n";
 	  unsigned short iZone, jDegree, iDim, iMGlevel;
-	  unsigned short nDim = geometry_container[ZONE_0][MESH_0]->GetnDim();
+
 
 	  su2double angular_interval = 2.0*PI_NUMBER/(su2double)(nZone);
-	  su2double *Coord;
+//	  su2double *Coord;
 	  su2double *GridVel;
-	  unsigned long iPoint;
+//unsigned long iPoint;
 	  cout<<"Angural interval :: "<<angular_interval<<endl;
 
 	  /*--- Compute period of oscillation & compute time interval using nTimeInstances ---*/
@@ -3694,9 +3760,9 @@ void CDriver::SetTimeSpectral_Velocities(bool reset){
 	    		  GridVel = geometry_container[iZone][iMGlevel]->node[iPoint]->GetGridVel();
 	    		  Coord = geometry_container[iZone][iMGlevel]->node[iPoint]->GetCoord();
 	    		  if (reset)
-	    			  geometry_container[iZone][iMGlevel]->node[iPoint]->SetGridVel(iDim, 0.0);//fitted_velocities[iZone]
+	    			  geometry_container[iZone][iMGlevel]->node[iPoint]->AddGridVel(iDim, 0.0);//fitted_velocities[iZone]
 	    		  else
-	    			  geometry_container[iZone][iMGlevel]->node[iPoint]->SetGridVel(iDim, fitted_velocities[iZone]);
+	    			  geometry_container[iZone][iMGlevel]->node[iPoint]->AddGridVel(iDim, fitted_velocities[iZone]);
 	    	  }
 	      }
 	    }
