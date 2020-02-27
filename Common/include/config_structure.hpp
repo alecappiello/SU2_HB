@@ -166,6 +166,7 @@ private:
   unsigned short Kind_Adaptation;	/*!< \brief Kind of numerical grid adaptation. */
   unsigned short nTimeInstances;  /*!< \brief Number of periodic time instances for  harmonic balance. */
   su2double HarmonicBalance_Period;		/*!< \brief Period of oscillation to be used with harmonic balance computations. */
+  su2double HarmonicBalance_InAmp;   /*!< \brief Period of oscillation to be used with harmonic balance computations. */
   su2double New_Elem_Adapt;			/*!< \brief Elements to adapt in the numerical grid adaptation process. */
   su2double Delta_UnstTime,			/*!< \brief Time step for unsteady computations. */
   Delta_UnstTimeND;						/*!< \brief Time step for unsteady computations (non dimensional). */
@@ -481,8 +482,10 @@ private:
   unsigned short Kind_Trans_Model,			/*!< \brief Transition model definition. */
   Kind_ActDisk, Kind_Engine_Inflow, Kind_Inlet, *Kind_Data_Riemann, *Kind_Data_Giles;           /*!< \brief Kind of inlet boundary treatment. */
   su2double Linear_Solver_Error;		/*!< \brief Min error of the linear solver for the implicit formulation. */
+  su2double Deform_Linear_Solver_Error;    /*!< \brief Min error of the linear solver for the implicit formulation. */
   su2double Linear_Solver_Error_FSI_Struc;		/*!< \brief Min error of the linear solver for the implicit formulation in the structural side for FSI problems . */
   unsigned long Linear_Solver_Iter;		/*!< \brief Max iterations of the linear solver for the implicit formulation. */
+  unsigned long Deform_Linear_Solver_Iter;   /*!< \brief Max iterations of the linear solver for the implicit formulation. */
   unsigned long Linear_Solver_Iter_FSI_Struc;		/*!< \brief Max iterations of the linear solver for FSI applications and structural solver. */
   unsigned long Linear_Solver_Restart_Frequency;   /*!< \brief Restart frequency of the linear solver for the implicit formulation. */
   unsigned short Linear_Solver_ILU_n;		/*!< \brief ILU fill=in level. */
@@ -2562,6 +2565,12 @@ public:
    */
   su2double GetHarmonicBalance_Period(void);
   
+  /*!
+   * \brief Retrieves the period of oscillations to be used with Harmonic Balance.
+   * \return: Period for Harmonic Balance.
+   */
+  su2double GetHarmonicBalance_InAmp(void);
+
   /*!
    * \brief Set the number of external iterations.
    * \note This is important in no time depending methods, where only

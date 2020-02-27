@@ -624,6 +624,7 @@ CEulerSolver::CEulerSolver(CGeometry *geometry, CConfig *config, unsigned short 
   CoPx_Inv           = new su2double[nMarker];
   CoPy_Inv           = new su2double[nMarker];
   CoPz_Inv           = new su2double[nMarker];
+  LocalWork			= 0.0;
  
   ForceMomentum     = new su2double[nDim];
   MomentMomentum    = new su2double[3];
@@ -854,6 +855,16 @@ CEulerSolver::CEulerSolver(CGeometry *geometry, CConfig *config, unsigned short 
 
   Set_MPI_Solution(geometry, config);
   
+  /* Vector Initialization for per cycle */
+
+  if((config->GetUnsteady_Simulation() != NO)){
+
+  steps_per_cycle = 10;//round(SU2_TYPE::GetValue((2*PI_NUMBER/config->GetPitching_Omega_Z(0))/config->GetDelta_UnstTimeND()));
+  if (rank == MASTER_NODE)
+	  cout<<"Steps per cycle : "<<steps_per_cycle<<endl;
+  for (unsigned int iTime=0; iTime<steps_per_cycle; iTime++)
+  	WorkDonePerCycle.push_back(0.0);
+  }
 }
 
 CEulerSolver::~CEulerSolver(void) {
@@ -5419,9 +5430,11 @@ void CEulerSolver::Pressure_Forces(CGeometry *geometry, CConfig *config) {
   string Marker_Tag, Monitoring_Tag;
   su2double MomentX_Force[3] = {0.0,0.0,0.0}, MomentY_Force[3] = {0.0,0.0,0.0}, MomentZ_Force[3] = {0.0,0.0,0.0};
   su2double AxiFactor;
+  LocalWork=0.0;
 
 #ifdef HAVE_MPI
   su2double MyAllBound_CD_Inv, MyAllBound_CL_Inv, MyAllBound_CSF_Inv, MyAllBound_CMx_Inv, MyAllBound_CMy_Inv, MyAllBound_CMz_Inv, MyAllBound_CoPx_Inv, MyAllBound_CoPy_Inv, MyAllBound_CoPz_Inv, MyAllBound_CFx_Inv, MyAllBound_CFy_Inv, MyAllBound_CFz_Inv, MyAllBound_CT_Inv, MyAllBound_CQ_Inv, MyAllBound_CNearFieldOF_Inv, *MySurface_CL_Inv = NULL, *MySurface_CD_Inv = NULL, *MySurface_CSF_Inv = NULL, *MySurface_CEff_Inv = NULL, *MySurface_CFx_Inv = NULL, *MySurface_CFy_Inv = NULL, *MySurface_CFz_Inv = NULL, *MySurface_CMx_Inv = NULL, *MySurface_CMy_Inv = NULL, *MySurface_CMz_Inv = NULL;
+  su2double MyAllBound_LocalWork;
 #endif
   
   su2double Alpha           = config->GetAoA()*PI_NUMBER/180.0;
@@ -5435,6 +5448,7 @@ void CEulerSolver::Pressure_Forces(CGeometry *geometry, CConfig *config) {
   }
   bool grid_movement        = config->GetGrid_Movement();
   bool axisymmetric         = config->GetAxisymmetric();
+  bool unsteady				= (config->GetUnsteady_Simulation()!=NO);
 
   /*--- Evaluate reference values for non-dimensionalization.
    For dynamic meshes, use the motion Mach number as a reference value
@@ -5471,7 +5485,7 @@ void CEulerSolver::Pressure_Forces(CGeometry *geometry, CConfig *config) {
   AllBound_CoPx_Inv = 0.0;         AllBound_CoPy_Inv = 0.0;  AllBound_CoPz_Inv = 0.0;
   AllBound_CFx_Inv = 0.0;          AllBound_CFy_Inv = 0.0;   AllBound_CFz_Inv = 0.0;
   AllBound_CT_Inv = 0.0;           AllBound_CQ_Inv = 0.0;    AllBound_CMerit_Inv = 0.0;
-  AllBound_CNearFieldOF_Inv = 0.0; AllBound_CEff_Inv = 0.0;
+  AllBound_CNearFieldOF_Inv = 0.0; AllBound_CEff_Inv = 0.0; AllBound_LocalWork=0.0;
   
   for (iMarker_Monitoring = 0; iMarker_Monitoring < config->GetnMarker_Monitoring(); iMarker_Monitoring++) {
     Surface_CL_Inv[iMarker_Monitoring]      = 0.0; Surface_CD_Inv[iMarker_Monitoring]      = 0.0;
@@ -5567,6 +5581,34 @@ void CEulerSolver::Pressure_Forces(CGeometry *geometry, CConfig *config) {
             ForceInviscid[iDim] += Force[iDim];
           }
           
+          switch (config->GetKind_ObjFunc()){
+          case KINETIC_ENERGY_LOSS:{
+            if(unsteady){
+              if(grid_movement){
+                su2double *Grid_Vel;
+                Grid_Vel = geometry->node[iPoint]->GetGridVel();
+                for (iDim = 0; iDim<nDim; iDim++)
+                  LocalWork += -Pressure * Normal[iDim] * factor * AxiFactor * Grid_Vel[iDim];
+              }
+              else{
+                for (iDim = 0; iDim<nDim; iDim++)
+                  LocalWork += -Pressure * Normal[iDim] * factor * AxiFactor;
+              }
+            }
+            break;
+          }
+//          case NORMAL_GRID_VEL:
+//          {
+//           su2double *Grid_Vel;
+//            Grid_Vel = geometry->node[iPoint]->GetGridVel();
+//            for (iDim = 0; iDim<nDim; iDim++)
+//              LocalWork += Grid_Vel[iDim] * Normal[iDim];
+//            break;
+//          }
+          default:
+            break;
+          }
+
           /*--- Moment with respect to the reference axis ---*/
           
           if (nDim == 3) {
@@ -5637,6 +5679,7 @@ void CEulerSolver::Pressure_Forces(CGeometry *geometry, CConfig *config) {
           AllBound_CT_Inv           += CT_Inv[iMarker];
           AllBound_CQ_Inv           += CQ_Inv[iMarker];
           AllBound_CMerit_Inv        = AllBound_CT_Inv / (AllBound_CQ_Inv + EPS);
+          AllBound_LocalWork	+=LocalWork;
           
           /*--- Compute the coefficients per surface ---*/
           
@@ -5693,6 +5736,7 @@ void CEulerSolver::Pressure_Forces(CGeometry *geometry, CConfig *config) {
   MyAllBound_CQ_Inv           = AllBound_CQ_Inv;           AllBound_CQ_Inv = 0.0;
   AllBound_CMerit_Inv = 0.0;
   MyAllBound_CNearFieldOF_Inv = AllBound_CNearFieldOF_Inv; AllBound_CNearFieldOF_Inv = 0.0;
+  MyAllBound_LocalWork = AllBound_LocalWork;
   
   SU2_MPI::Allreduce(&MyAllBound_CD_Inv, &AllBound_CD_Inv, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
   SU2_MPI::Allreduce(&MyAllBound_CL_Inv, &AllBound_CL_Inv, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
@@ -5711,6 +5755,7 @@ void CEulerSolver::Pressure_Forces(CGeometry *geometry, CConfig *config) {
   SU2_MPI::Allreduce(&MyAllBound_CQ_Inv, &AllBound_CQ_Inv, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
   AllBound_CMerit_Inv = AllBound_CT_Inv / (AllBound_CQ_Inv + EPS);
   SU2_MPI::Allreduce(&MyAllBound_CNearFieldOF_Inv, &AllBound_CNearFieldOF_Inv, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+  SU2_MPI::Allreduce(&MyAllBound_LocalWork, &AllBound_LocalWork, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
   
   /*--- Add the forces on the surfaces using all the nodes ---*/
   
@@ -5787,6 +5832,7 @@ void CEulerSolver::Pressure_Forces(CGeometry *geometry, CConfig *config) {
   Total_CQ            = AllBound_CQ_Inv;
   Total_CMerit        = Total_CT / (Total_CQ + EPS);
   Total_CNearFieldOF  = AllBound_CNearFieldOF_Inv;
+  LocalWork			  =	AllBound_LocalWork;
   
   /*--- Update the total coefficients per surface (note that all the nodes have the same value)---*/
   
@@ -5802,7 +5848,7 @@ void CEulerSolver::Pressure_Forces(CGeometry *geometry, CConfig *config) {
     Surface_CMy[iMarker_Monitoring]        = Surface_CMy_Inv[iMarker_Monitoring];
     Surface_CMz[iMarker_Monitoring]        = Surface_CMz_Inv[iMarker_Monitoring];
   }
-  
+
 }
 
 void CEulerSolver::Momentum_Forces(CGeometry *geometry, CConfig *config) {
@@ -9727,7 +9773,7 @@ void CEulerSolver::BC_TurboRiemann(CGeometry *geometry, CSolver **solver_contain
   su2double *Velocity_b, Velocity2_b, Enthalpy_b, Energy_b, StaticEnergy_b, Density_b, Kappa_b, Chi_b, Pressure_b, Temperature_b;
   su2double *Velocity_e, Velocity2_e, Enthalpy_e, Entropy_e, Energy_e = 0.0, StaticEnthalpy_e, StaticEnergy_e, Density_e = 0.0, Pressure_e;
   su2double *Velocity_i, Velocity2_i, Enthalpy_i, Energy_i, StaticEnergy_i, Density_i, Kappa_i, Chi_i, Pressure_i, SoundSpeed_i;
-  su2double ProjVelocity_i;
+  su2double ProjVelocity_i, deltaT;
   su2double **P_Tensor, **invP_Tensor, *Lambda_i, **Jacobian_b, **DubDu, *dw, *u_e, *u_i, *u_b;
   su2double *gridVel;
   su2double *V_boundary, *V_domain, *S_boundary, *S_domain;
@@ -9741,6 +9787,7 @@ void CEulerSolver::BC_TurboRiemann(CGeometry *geometry, CSolver **solver_contain
   bool gravity = (config->GetGravityForce());
   bool tkeNeeded = (((config->GetKind_Solver() == RANS )|| (config->GetKind_Solver() == DISC_ADJ_RANS)) &&
       (config->GetKind_Turb_Model() == SST));
+  bool harmonic_balance = (config->GetUnsteady_Simulation() == HARMONIC_BALANCE);
 
   su2double *Normal, *turboNormal, *UnitNormal, *FlowDirMix, FlowDirMixMag, *turboVelocity;
   Normal = new su2double[nDim];
@@ -9766,6 +9813,13 @@ void CEulerSolver::BC_TurboRiemann(CGeometry *geometry, CSolver **solver_contain
   {
     P_Tensor[iVar] = new su2double[nVar];
     invP_Tensor[iVar] = new su2double[nVar];
+  }
+
+  if (harmonic_balance){
+    /*--- period of oscillation & compute time interval using nTimeInstances ---*/
+    su2double period = config->GetHarmonicBalance_Period();
+    period /= config->GetTime_Ref();
+    deltaT = period/(su2double)(config->GetnTimeInstances());
   }
 
   /*--- Loop over all the vertices on this boundary marker ---*/
@@ -9838,6 +9892,8 @@ void CEulerSolver::BC_TurboRiemann(CGeometry *geometry, CSolver **solver_contain
           T_Total  = config->GetRiemann_Var2(Marker_Tag);
           Flow_Dir = config->GetRiemann_FlowDir(Marker_Tag);
 
+          P_Total = P_Total+(P_Total*config->GetHarmonicBalance_InAmp()*sin(16686.265254*deltaT*iZone));
+//          cout<<"iZone :: "<<iZone<<" P_Tot :: "<<P_Total<<endl;
 
           /*--- Non-dim. the inputs if necessary. ---*/
           P_Total /= config->GetPressure_Ref();
@@ -15439,6 +15495,22 @@ void CEulerSolver::PreprocessSpanWiceBC_Outlet(CConfig *config, CGeometry *geome
 
 }
 
+void CEulerSolver::SetWorkDone(unsigned short marker_val, unsigned short span_val) {
+WorkDonePerCycle.push_back(LocalWork);
+}
+
+su2double CEulerSolver::GetWorkDone(unsigned short marker_val, unsigned short span_val) {
+	return LocalWork;
+}
+
+su2double CEulerSolver::GetWorkDonePerCycle(unsigned short marker_val, unsigned short span_val){
+	su2double WorkDoneTotal=0.0;
+		for (vector<su2double>::iterator iEW = WorkDonePerCycle.end()-1; iEW >= (WorkDonePerCycle.end()-steps_per_cycle); iEW--){
+			WorkDoneTotal +=0.0;
+		}
+	return WorkDoneTotal/steps_per_cycle;
+}
+
 CNSSolver::CNSSolver(void) : CEulerSolver() {
   
   /*--- Basic array initialization ---*/
@@ -16122,7 +16194,15 @@ CNSSolver::CNSSolver(CGeometry *geometry, CConfig *config, unsigned short iMesh)
   /*--- Perform the MPI communication of the solution ---*/
 
   Set_MPI_Solution(geometry, config);
-  
+
+  if((config->GetUnsteady_Simulation() != NO)){
+
+  steps_per_cycle = round(SU2_TYPE::GetValue((2*PI_NUMBER/config->GetPitching_Omega_Z(0))/config->GetDelta_UnstTimeND()));
+  if (rank == MASTER_NODE)
+	  cout<<"Steps per cycle : "<<steps_per_cycle<<endl;
+  for (unsigned int iTime=0; iTime<steps_per_cycle; iTime++)
+  	WorkDonePerCycle.push_back(0.0);
+  }
 }
 
 CNSSolver::~CNSSolver(void) {

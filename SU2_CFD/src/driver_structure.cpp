@@ -6060,7 +6060,7 @@ void CDiscAdjHBMultiZone::SetObjFunction(){
     solver_container[ZONE_0][MESH_0][FLOW_SOL]->AddTotal_ComboObj(output->GetPower_HB());
     break;
   case KINETIC_ENERGY_LOSS:
-    solver_container[ZONE_0][MESH_0][FLOW_SOL]->AddTotal_ComboObj(output->GetKineticEnergyLoss(config_container[ZONE_0]->GetnMarker_TurboPerformance() - 1, config_container[ZONE_0]->GetnSpanMaxAllZones()));
+    solver_container[ZONE_0][MESH_0][FLOW_SOL]->AddTotal_ComboObj(output->GetTotalWorkDone_HB());
     break;
   default:
     break;

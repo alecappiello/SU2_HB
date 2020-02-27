@@ -1024,6 +1024,8 @@ void CConfig::SetConfig_Options(unsigned short val_iZone, unsigned short val_nZo
   addUnsignedShortOption("TIME_INSTANCES", nTimeInstances, 1);
   /* DESCRIPTION: Time period for Harmonic Balance wihtout moving meshes */
   addDoubleOption("HB_PERIOD", HarmonicBalance_Period, -1.0);
+  /* DESCRIPTION: Amplitude of intlet  */
+    addDoubleOption("HB_INLET_AMP", HarmonicBalance_InAmp, 0.0);
   /* DESCRIPTION:  Turn on/off harmonic balance preconditioning */
   addBoolOption("HB_PRECONDITION", HB_Precondition, false);
   /* DESCRIPTION: Iteration number to begin unsteady restarts (dual time method) */
@@ -1627,6 +1629,10 @@ void CConfig::SetConfig_Options(unsigned short val_iZone, unsigned short val_nZo
   addEnumOption("DEFORM_LINEAR_SOLVER", Kind_Deform_Linear_Solver, Linear_Solver_Map, FGMRES);
   /*  \n DESCRIPTION: Preconditioner for the Krylov linear solvers \n OPTIONS: see \link Linear_Solver_Prec_Map \endlink \n DEFAULT: LU_SGS \ingroup Config*/
   addEnumOption("DEFORM_LINEAR_SOLVER_PREC", Kind_Deform_Linear_Solver_Prec, Linear_Solver_Prec_Map, ILU);
+  /* DESCRIPTION: Minimum error threshold for the linear solver for the implicit formulation */
+  addDoubleOption("DEFORM_LINEAR_SOLVER_ERROR", Deform_Linear_Solver_Error, 1E-5);
+  /* DESCRIPTION: Maximum number of iterations of the linear solver for the implicit formulation */
+  addUnsignedLongOption("DEFORM_LINEAR_SOLVER_ITER", Deform_Linear_Solver_Iter, 1000);
 
   addStringListOption("MARKER_DEFORM_NORMAL", nMarker_DeformNormal, Marker_DeformNormal);
   addStringListOption("MARKER_DEFORM_TANGENTIAL", nMarker_DeformTangential, Marker_DeformTangential);

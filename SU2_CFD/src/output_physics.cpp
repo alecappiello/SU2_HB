@@ -251,8 +251,10 @@ void COutput::ComputeTurboPerformance(CSolver *solver_container, CGeometry *geom
       TotalPressureLoss[nMarkerTurboPerf*iTimeInstance + iMarkerTP][iSpan]  = (relPressureIn - relPressureOut)/(relPressureIn - PressureOut[nMarkerTurboPerf*iTimeInstance + iMarkerTP][iSpan]);
       KineticEnergyLoss[nMarkerTurboPerf*iTimeInstance + iMarkerTP][iSpan]  = 2*(EnthalpyOut[nMarkerTurboPerf*iTimeInstance + iMarkerTP][iSpan] - enthalpyOutIs)/relVelOutIs2;
       PressureRatio[nMarkerTurboPerf*iTimeInstance + iMarkerTP][iSpan]      = TotalPressureOut[nMarkerTurboPerf*iTimeInstance + iMarkerTP][iSpan]/TotalPressureIn[nMarkerTurboPerf*iTimeInstance + iMarkerTP][iSpan];
-
-
+      TotalWorkDone_S[nMarkerTurboPerf*iTimeInstance +  iMarkerTP][nSpanWiseSections] = solver_container->GetWorkDone(iMarkerTP,iSpan);
+      TotalWorkDone_D[nMarkerTurboPerf*iTimeInstance +  iMarkerTP][nSpanWiseSections]   = EulerianWork[nMarkerTurboPerf*iTimeInstance +  iMarkerTP][iSpan]*MassFlowOut[nMarkerTurboPerf*iTimeInstance + iMarkerTP][iSpan];
+      if((config->GetUnsteady_Simulation()!=NO))
+    	  TotalWorkDonePerCyc_S[nMarkerTurboPerf*iTimeInstance +  iMarkerTP][nSpanWiseSections]           = solver_container->GetWorkDonePerCycle(iMarkerTP,iSpan);
     }
   }
 
@@ -319,10 +321,13 @@ void COutput::ComputeAvgTurboPerformance_HB(CConfig *config, unsigned short nTim
   Power_HB = 0.;
   TotalTotalEfficiencyAverage_HB = 0.;
   TotalStaticEfficiencyAverage_HB= 0.;
+  TotalWorkDone_Surface_HB = 0.0;
 
 for (iGeomZone = 0; iGeomZone < nBladesRow; iGeomZone++ ){
   for (iTimeInstance = 0; iTimeInstance < nTimeInstances; iTimeInstance++ ){
-    EntropyGenAverage_HB    += EntropyGen[iTimeInstance * nMarkerTurboPerf + iGeomZone][nSpanWiseSections];
+    EntropyGenAverage_HB        += EntropyGen[iTimeInstance * nMarkerTurboPerf + iGeomZone][nSpanWiseSections];
+    TotalWorkDone_Surface_HB    += TotalWorkDone_S[iTimeInstance * nMarkerTurboPerf + iGeomZone][nSpanWiseSections];
+    //cout<<"Total Work Done :: "<<TotalWorkDone_S[iTimeInstance * nMarkerTurboPerf + iGeomZone][nSpanWiseSections]<<endl;
     if (iGeomZone == nBladesRow-1)
       Power_HB += MassFlowIn[iTimeInstance * nMarkerTurboPerf + iGeomZone][nSpanWiseSections]
                   * EulerianWork[iTimeInstance * nMarkerTurboPerf + iGeomZone][nSpanWiseSections];
@@ -330,6 +335,8 @@ for (iGeomZone = 0; iGeomZone < nBladesRow; iGeomZone++ ){
 }
   EntropyGenAverage_HB /= nTimeInstances;
   Power_HB /= nTimeInstances;
+  TotalWorkDone_Surface_HB /= nTimeInstances;
+  cout<<"Work Done :: "<<TotalWorkDone_Surface_HB<<endl;
 
   if (nBladesRow > 1){
     for (iTimeInstance = 0; iTimeInstance < nTimeInstances; iTimeInstance++ ){
@@ -346,6 +353,12 @@ for (iGeomZone = 0; iGeomZone < nBladesRow; iGeomZone++ ){
 }
 
 
+void COutput::SetWorkDone(unsigned short iMarkerTP, unsigned short iSpan) {
+	WorkDonePerCycle.push_back(TotalWorkDone_D[0][1]);
 
+	su2double WorkDoneTotal=0.0;
 
-
+	for (vector<su2double>::iterator iEW = WorkDonePerCycle.end()-1; iEW >= (WorkDonePerCycle.end()-steps_per_cycle); iEW--)
+		WorkDoneTotal +=*iEW;
+	TotalWorkDonePerCyc_D[0][1] = WorkDoneTotal/steps_per_cycle;
+}

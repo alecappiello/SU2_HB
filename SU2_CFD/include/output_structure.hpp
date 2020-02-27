@@ -182,12 +182,20 @@ class COutput {
         **TurbIntensityOut,
         **Turb2LamViscRatioOut,
         **NuFactorIn,
-        **NuFactorOut;
+        **NuFactorOut,
+  	  	**TotalWorkDone_S,
+  	  	**TotalWorkDone_D,
+  	  	**TotalWorkDonePerCyc_S,
+        **TotalWorkDonePerCyc_D;
 
   su2double EntropyGenAverage_HB,
             Power_HB,
             TotalTotalEfficiencyAverage_HB,
-            TotalStaticEfficiencyAverage_HB;
+            TotalStaticEfficiencyAverage_HB,
+			TotalWorkDone_Surface_HB;
+
+  vector<su2double> WorkDonePerCycle;
+  unsigned short steps_per_cycle;
 
 protected:
 
@@ -712,6 +720,8 @@ public:
    */
   su2double GetPower_HB();
 
+  su2double GetTotalWorkDone_HB();
+
   /*!
    * \brief Give the flow outlet angle  performance parameters for turbomachinery.
    * \param[in] iMarkerTP - Marker turbo-performance.
@@ -867,6 +877,8 @@ public:
    */
   void DeallocateSurfaceData_Parallel(CConfig *config, CGeometry *geometry);
   
+  void SetWorkDone(unsigned short iMarkerTP, unsigned short iSpan);
+
 };
 
 #include "output_structure.inl"

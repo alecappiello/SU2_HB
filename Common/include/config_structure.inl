@@ -271,6 +271,8 @@ inline unsigned short CConfig::GetnTimeInstances(void) { return nTimeInstances; 
 
 inline su2double CConfig::GetHarmonicBalance_Period(void) { return HarmonicBalance_Period; }
 
+inline su2double CConfig::GetHarmonicBalance_InAmp(void) { return HarmonicBalance_InAmp; }
+
 inline void CConfig::SetExtIter(unsigned long val_iter) { ExtIter = val_iter; }
 
 inline void CConfig::SetExtIter_OffSet(unsigned long val_iter) { ExtIter_OffSet = val_iter; }

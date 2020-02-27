@@ -633,12 +633,13 @@ su2double CVolumetricMovement::Get_Tangent3D(su2double* Normal, su2double* t1, s
     UnitNormal[iDim] = Normal[iDim];
   }
 
-//  Area = sqrt(Area);
+  Area = sqrt(Area);
 
-//  for (iDim = 0; iDim < nDim; iDim++){
-//    UnitNormal[iDim] /= Area;
-//  }
+  for (iDim = 0; iDim < nDim; iDim++){
+    UnitNormal[iDim] /= Area;
+  }
 
+    CrossProduct(UnitNormal, UnitJ, t1);
 //  CrossProduct(UnitNormal, UnitI, nCrossI);
 //  CrossProduct(UnitNormal, UnitJ, nCrossJ);
 //  CrossProduct(UnitNormal, UnitK, nCrossK);
@@ -660,7 +661,7 @@ su2double CVolumetricMovement::Get_Tangent3D(su2double* Normal, su2double* t1, s
 //    for (iDim = 0; iDim < nDim; iDim++) t1[iDim] = nCrossK[iDim];
 //  }
 
-  t1[0] = 0.0; t1[1] = 0.0; t1[2] = 1.0;
+//  t1[0] = 0.0; t1[1] = 0.0; t1[2] = 1.0;
 
   /*--- Compute tangential vector t2 ---*/
 
@@ -677,10 +678,10 @@ void CVolumetricMovement::SetTangential_BC(CGeometry *geometry, CConfig *config,
   su2double** TransformationMatrix = NULL, **StiffMatrix_Elem_BC = NULL;
   unsigned long StiffMatrix_nElem = 0;
   unsigned short iVar = 0, jVar = 0, kVar = 0, iNodes = 0, iMarker = 0, iDim = 0;
-  su2double Normal[3];
+//  su2double Normal[3];
   su2double t1[3], t2[3], Area = 0;
   long iVertex;
-  su2double* Coord;
+  su2double *Coord, *Normal;
 
   /*--- We transform the local coordinate system of each node on the tangential boundary,
    * to coincide with the tangential and normal direction. ---*/
@@ -718,7 +719,7 @@ void CVolumetricMovement::SetTangential_BC(CGeometry *geometry, CConfig *config,
 
           /*--- Compute the entries of the transformation matrix ---*/
 
-//          Normal = geometry->vertex[iMarker][iVertex]->GetNormal();
+          Normal = geometry->vertex[iMarker][iVertex]->GetNormal();
 
           Coord = geometry->node[PointCorners[iNodes]]->GetCoord();
 
@@ -735,9 +736,9 @@ void CVolumetricMovement::SetTangential_BC(CGeometry *geometry, CConfig *config,
             }
           } else {
 
-            Normal[0] = Coord[0]/sqrt(Coord[0]*Coord[0]+Coord[1]*Coord[1]);
-            Normal[1] = Coord[1]/sqrt(Coord[0]*Coord[0]+Coord[1]*Coord[1]);
-            Normal[2] = 0.0;
+//            Normal[0] = Coord[0]/sqrt(Coord[0]*Coord[0]+Coord[1]*Coord[1]);
+//            Normal[1] = Coord[1]/sqrt(Coord[0]*Coord[0]+Coord[1]*Coord[1]);
+//            Normal[2] = 0.0;
 
             /*--- Get two tangential vectors in 3D ---*/
 
@@ -1812,77 +1813,79 @@ void CVolumetricMovement::AddFEA_StiffMatrix(CGeometry *geometry, su2double **St
 }
 
 void CVolumetricMovement::SetBoundaryDisplacements(CGeometry *geometry, CConfig *config) {
-  
-  unsigned short iDim, nDim = geometry->GetnDim(), iMarker, axis = 0;
-  unsigned long iPoint, total_index, iVertex;
-  su2double *VarCoord, MeanCoord[3] = {0.0,0.0,0.0}, VarIncrement = 1.0;
-  
-  /*--- Get the SU2 module. SU2_CFD will use this routine for dynamically
-   deforming meshes (MARKER_MOVING), while SU2_DEF will use it for deforming
-   meshes after imposing design variable surface deformations (DV_MARKER). ---*/
-  
-  unsigned short Kind_SU2 = config->GetKind_SU2();
-  
-  /*--- If requested (no by default) impose the surface deflections in
-   increments and solve the grid deformation equations iteratively with
-   successive small deformations. ---*/
-  
-  VarIncrement = 1.0/((su2double)config->GetGridDef_Nonlinear_Iter());
-	
-  /*--- As initialization, set to zero displacements of all the surfaces except the symmetry
-   plane, internal and periodic bc the receive boundaries and periodic boundaries. ---*/
-  
-  for (iMarker = 0; iMarker < config->GetnMarker_All(); iMarker++) {
-    if (((config->GetMarker_All_KindBC(iMarker) != SYMMETRY_PLANE) &&
-         (config->GetMarker_All_KindBC(iMarker) != SEND_RECEIVE) &&
-         (config->GetMarker_All_KindBC(iMarker) != INTERNAL_BOUNDARY) &&
-         (config->GetMarker_All_KindBC(iMarker) != PERIODIC_BOUNDARY)&&
-         (config->GetMarker_All_DeformTangential(iMarker) == NO) &&
-         (config->GetMarker_All_DeformNormal(iMarker) == NO)))  {
-      for (iVertex = 0; iVertex < geometry->nVertex[iMarker]; iVertex++) {
-        iPoint = geometry->vertex[iMarker][iVertex]->GetNode();
-        for (iDim = 0; iDim < nDim; iDim++) {
-          total_index = iPoint*nDim + iDim;
-          LinSysRes[total_index] = 0.0;
-          LinSysSol[total_index] = 0.0;
-          StiffMatrix.DeleteValsRowi(total_index);
+
+    unsigned short iDim, nDim = geometry->GetnDim(), iMarker, axis = 0;
+    unsigned long iPoint, total_index, iVertex;
+    su2double *VarCoord, MeanCoord[3] = {0.0, 0.0, 0.0}, VarIncrement = 1.0;
+
+    /*--- Get the SU2 module. SU2_CFD will use this routine for dynamically
+     deforming meshes (MARKER_MOVING), while SU2_DEF will use it for deforming
+     meshes after imposing design variable surface deformations (DV_MARKER). ---*/
+
+    unsigned short Kind_SU2 = config->GetKind_SU2();
+
+    /*--- If requested (no by default) impose the surface deflections in
+     increments and solve the grid deformation equations iteratively with
+     successive small deformations. ---*/
+
+    VarIncrement = 1.0 / ((su2double) config->GetGridDef_Nonlinear_Iter());
+
+    /*--- As initialization, set to zero displacements of all the surfaces except the symmetry
+     plane, internal and periodic bc the receive boundaries and periodic boundaries. ---*/
+
+    for (iMarker = 0; iMarker < config->GetnMarker_All(); iMarker++) {
+        if (((config->GetMarker_All_KindBC(iMarker) != SYMMETRY_PLANE) &&
+             (config->GetMarker_All_KindBC(iMarker) != SEND_RECEIVE) &&
+             (config->GetMarker_All_KindBC(iMarker) != INTERNAL_BOUNDARY) &&
+             (config->GetMarker_All_KindBC(iMarker) != PERIODIC_BOUNDARY) &&
+             (config->GetMarker_All_DeformTangential(iMarker) == NO) &&
+             (config->GetMarker_All_DeformNormal(iMarker) == NO))) {
+            for (iVertex = 0; iVertex < geometry->nVertex[iMarker]; iVertex++) {
+                iPoint = geometry->vertex[iMarker][iVertex]->GetNode();
+                for (iDim = 0; iDim < nDim; iDim++) {
+                    total_index = iPoint * nDim + iDim;
+                    LinSysRes[total_index] = 0.0;
+                    LinSysSol[total_index] = 0.0;
+                    StiffMatrix.DeleteValsRowi(total_index);
+                }
+            }
         }
       }
-    }
-  }
+//    }
+//  }
 
   /*--- Set to zero displacements of the normal component for the symmetry plane condition ---*/
   
-  for (iMarker = 0; iMarker < config->GetnMarker_All(); iMarker++) {
-    if ((config->GetMarker_All_KindBC(iMarker) == SYMMETRY_PLANE) ) {
-      
-      for (iDim = 0; iDim < nDim; iDim++) MeanCoord[iDim] = 0.0;
-      for (iVertex = 0; iVertex < geometry->nVertex[iMarker]; iVertex++) {
-        iPoint = geometry->vertex[iMarker][iVertex]->GetNode();
-        VarCoord = geometry->node[iPoint]->GetCoord();
-        for (iDim = 0; iDim < nDim; iDim++)
-          MeanCoord[iDim] += VarCoord[iDim]*VarCoord[iDim];
-      }
-      for (iDim = 0; iDim < nDim; iDim++) MeanCoord[iDim] = sqrt(MeanCoord[iDim]);
-      if (nDim==3) {
-        if ((MeanCoord[0] <= MeanCoord[1]) && (MeanCoord[0] <= MeanCoord[2])) axis = 0;
-        if ((MeanCoord[1] <= MeanCoord[0]) && (MeanCoord[1] <= MeanCoord[2])) axis = 1;
-        if ((MeanCoord[2] <= MeanCoord[0]) && (MeanCoord[2] <= MeanCoord[1])) axis = 2;
-      }
-      else {
-        if ((MeanCoord[0] <= MeanCoord[1]) ) axis = 0;
-        if ((MeanCoord[1] <= MeanCoord[0]) ) axis = 1;
-      }
-      
-      for (iVertex = 0; iVertex < geometry->nVertex[iMarker]; iVertex++) {
-        iPoint = geometry->vertex[iMarker][iVertex]->GetNode();
-        total_index = iPoint*nDim + axis;
-        LinSysRes[total_index] = 0.0;
-        LinSysSol[total_index] = 0.0;
-        StiffMatrix.DeleteValsRowi(total_index);
-      }
-    }
-  }
+//  for (iMarker = 0; iMarker < config->GetnMarker_All(); iMarker++) {
+//    if ((config->GetMarker_All_KindBC(iMarker) == SYMMETRY_PLANE) ) {
+//      
+//      for (iDim = 0; iDim < nDim; iDim++) MeanCoord[iDim] = 0.0;
+//      for (iVertex = 0; iVertex < geometry->nVertex[iMarker]; iVertex++) {
+//        iPoint = geometry->vertex[iMarker][iVertex]->GetNode();
+//        VarCoord = geometry->node[iPoint]->GetCoord();
+//        for (iDim = 0; iDim < nDim; iDim++)
+//          MeanCoord[iDim] += VarCoord[iDim]*VarCoord[iDim];
+//      }
+//      for (iDim = 0; iDim < nDim; iDim++) MeanCoord[iDim] = sqrt(MeanCoord[iDim]);
+//      if (nDim==3) {
+//        if ((MeanCoord[0] <= MeanCoord[1]) && (MeanCoord[0] <= MeanCoord[2])) axis = 0;
+//        if ((MeanCoord[1] <= MeanCoord[0]) && (MeanCoord[1] <= MeanCoord[2])) axis = 1;
+//        if ((MeanCoord[2] <= MeanCoord[0]) && (MeanCoord[2] <= MeanCoord[1])) axis = 2;
+//      }
+//      else {
+//        if ((MeanCoord[0] <= MeanCoord[1]) ) axis = 0;
+//        if ((MeanCoord[1] <= MeanCoord[0]) ) axis = 1;
+//      }
+//      
+//      for (iVertex = 0; iVertex < geometry->nVertex[iMarker]; iVertex++) {
+//        iPoint = geometry->vertex[iMarker][iVertex]->GetNode();
+//        total_index = iPoint*nDim + axis;
+//        LinSysRes[total_index] = 0.0;
+//        LinSysSol[total_index] = 0.0;
+//        StiffMatrix.DeleteValsRowi(total_index);
+//      }
+//    }
+//  }
 
   /*--- Set the known displacements, note that some points of the moving surfaces
    could be on on the symmetry plane, we should specify DeleteValsRowi again (just in case) ---*/
@@ -1959,10 +1962,10 @@ void CVolumetricMovement::SetBoundaryDisplacements(CGeometry *geometry, CConfig 
             StiffMatrix.DeleteValsRowi(iPoint*nDim+1);
           }else {
             LinSysRes[iPoint*nDim+2] = 0; LinSysSol[iPoint*nDim+2] = 0;
-            LinSysRes[iPoint*nDim+0] = 0; LinSysSol[iPoint*nDim+0] = 0;
+            //LinSysRes[iPoint*nDim+0] = 0; LinSysSol[iPoint*nDim+0] = 0;
 
             StiffMatrix.DeleteValsRowi(iPoint*nDim+2);
-            StiffMatrix.DeleteValsRowi(iPoint*nDim+0);
+            //StiffMatrix.DeleteValsRowi(iPoint*nDim+0);
 
           }
         }
@@ -2021,38 +2024,38 @@ void CVolumetricMovement::Transform_DoFs(CGeometry *geometry, CConfig *config, C
 
           Coord = geometry->node[iPoint]->GetCoord();
 
-          if (nDim == 2){
-            Area = Get_Tangent2D(Normal, t1);
-            if (transpose){
-              for (iDim = 0; iDim < nDim; iDim++){
-                TempSol[iDim] += vector[iPoint*nDim+0]*t1[iDim];
-                TempSol[iDim] += vector[iPoint*nDim+1]*Normal[iDim]/Area;
-              }
-            } else {
-              for (iDim = 0; iDim < nDim; iDim++){
-                TempSol[0] += vector[iPoint*nDim+iDim]*t1[iDim];
-                TempSol[1] += vector[iPoint*nDim+iDim]*Normal[iDim]/Area;
-              }
-            }
-          } else {
-            Normal[0] = Coord[0]/sqrt(Coord[0]*Coord[0]+Coord[1]*Coord[1]);
-            Normal[1] = Coord[1]/sqrt(Coord[0]*Coord[0]+Coord[1]*Coord[1]);
-            Normal[2] = 0.0;
-            Area = Get_Tangent3D(Normal, t1, t2);
-            if (transpose){
-              for (iDim = 0; iDim < nDim; iDim++){
-                TempSol[iDim] += vector[iPoint*nDim+0]*t1[iDim];
-                TempSol[iDim] += vector[iPoint*nDim+1]*t2[iDim];
-                TempSol[iDim] += vector[iPoint*nDim+2]*Normal[iDim];
-              }
-            } else {
-              for (iDim = 0; iDim < nDim; iDim++){
-                TempSol[0] += vector[iPoint*nDim+iDim]*t1[iDim];
-                TempSol[1] += vector[iPoint*nDim+iDim]*t2[iDim];
-                TempSol[2] += vector[iPoint*nDim+iDim]*Normal[iDim];
-              }
-            }
-          }
+                if (nDim == 2){
+                    Area = Get_Tangent2D(Normal, t1);
+                    if (transpose){
+                        for (iDim = 0; iDim < nDim; iDim++){
+                            TempSol[iDim] += vector[iPoint*nDim+0]*t1[iDim];
+                            TempSol[iDim] += vector[iPoint*nDim+1]*Normal[iDim]/Area;
+                        }
+                    } else {
+                        for (iDim = 0; iDim < nDim; iDim++){
+                            TempSol[0] += vector[iPoint*nDim+iDim]*t1[iDim];
+                            TempSol[1] += vector[iPoint*nDim+iDim]*Normal[iDim]/Area;
+                        }
+                    }
+                } else {
+//                    Normal[0] = Coord[0]/sqrt(Coord[0]*Coord[0]+Coord[1]*Coord[1]);
+//                    Normal[1] = Coord[1]/sqrt(Coord[0]*Coord[0]+Coord[1]*Coord[1]);
+//                    Normal[2] = 0.0;
+                    Area = Get_Tangent3D(Normal, t1, t2);
+                    if (transpose){
+                        for (iDim = 0; iDim < nDim; iDim++){
+                            TempSol[iDim] += vector[iPoint*nDim+0]*t1[iDim];
+                            TempSol[iDim] += vector[iPoint*nDim+1]*t2[iDim];
+                            TempSol[iDim] += vector[iPoint*nDim+2]*Normal[iDim];
+                        }
+                    } else {
+                        for (iDim = 0; iDim < nDim; iDim++){
+                            TempSol[0] += vector[iPoint*nDim+iDim]*t1[iDim];
+                            TempSol[1] += vector[iPoint*nDim+iDim]*t2[iDim];
+                            TempSol[2] += vector[iPoint*nDim+iDim]*Normal[iDim];
+                        }
+                    }
+                }
 
           for (iDim = 0; iDim < nDim; iDim++){
             vector[iPoint*nDim+iDim] = TempSol[iDim];

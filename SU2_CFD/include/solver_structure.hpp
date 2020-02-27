@@ -3605,6 +3605,12 @@ public:
    */
   virtual void SetFreeStream_TurboSolution(CConfig *config);
 
+  virtual void SetWorkDone(unsigned short inMarkerTP, unsigned short valSpan);
+
+  virtual su2double GetWorkDone(unsigned short inMarkerTP, unsigned short valSpan);
+
+  virtual su2double GetWorkDonePerCycle(unsigned short inMarkerTP, unsigned short valSpan);
+
 
 };
 
@@ -3800,7 +3806,8 @@ protected:
   AllBound_CT_Inv,      /*!< \brief Total thrust coefficient (inviscid contribution) for all the boundaries. */
   AllBound_CQ_Inv,      /*!< \brief Total torque coefficient (inviscid contribution) for all the boundaries. */
   AllBound_CEquivArea_Inv,      /*!< \brief equivalent area coefficient (inviscid contribution) for all the boundaries. */
-  AllBound_CNearFieldOF_Inv;      /*!< \brief Near-Field press coefficient (inviscid contribution) for all the boundaries. */
+  AllBound_CNearFieldOF_Inv,      /*!< \brief Near-Field press coefficient (inviscid contribution) for all the boundaries. */
+  AllBound_LocalWork;
   
   su2double
   AllBound_CD_Mnt,  /*!< \brief Total drag coefficient (inviscid contribution) for all the boundaries. */
@@ -3971,6 +3978,11 @@ protected:
 
   su2double ****SlidingState;
   int **SlidingStateNodes;
+
+  su2double LocalWork;
+
+  vector<su2double> WorkDonePerCycle;
+  unsigned short steps_per_cycle;
 
 public:
   
@@ -6112,6 +6124,12 @@ public:
    * \param[in] inMarkerTP - turboperformance marker.
    */
   void SetNuOut(su2double value, unsigned short inMarkerTP, unsigned short valSpan);
+
+  void SetWorkDone(unsigned short inMarkerTP, unsigned short valSpan);
+
+  su2double GetWorkDone(unsigned short inMarkerTP, unsigned short valSpan);
+
+  su2double GetWorkDonePerCycle(unsigned short inMarkerTP, unsigned short valSpan);
 
 
 };

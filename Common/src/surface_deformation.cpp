@@ -4096,10 +4096,11 @@ void CSurfaceMovement::SetExternal_Deformation(CGeometry *geometry, CConfig *con
   su2double r[3] = {0.0,0.0,0.0}, rotCoord[3] = {0.0,0.0,0.0};
   unsigned long iVertex;
   unsigned short iMarker;
-  char buffer[50];
+  char cstr[50], buffer[50];
   string motion_filename, UnstExt, text_line;
   ifstream motion_file;
-  bool unsteady = config->GetUnsteady_Simulation();
+  bool unsteady = (config->GetUnsteady_Simulation() == DT_STEPPING_1ST)
+                          || (config->GetUnsteady_Simulation() == DT_STEPPING_2ND);
   bool adjoint = config->GetContinuous_Adjoint();
 
   /*--- Load stuff from config ---*/
@@ -4144,7 +4145,18 @@ void CSurfaceMovement::SetExternal_Deformation(CGeometry *geometry, CConfig *con
 
   /*--- Open the motion file ---*/
 
-  motion_file.open(motion_filename.data(), ios::in);
+  //if (config->GetUnsteady_Simulation()==HARMONIC_BALANCE && config->GetKind_SU2() == SU2_CFD ){
+  //  motion_filename = motion_filename.substr(0,motion_filename.size()-4);
+  //  strcpy (cstr, motion_filename.c_str());
+  //  SPRINTF (buffer, "_%d.txt", SU2_TYPE::Int(iZone));
+  //  strcat(cstr, buffer);
+  //  motion_file.open(cstr, ios::in);
+ // }
+  //else{
+    motion_file.open(motion_filename.data(), ios::in);
+  //}
+
+  cout << "Motion updated using file "<<cstr<< " !" << endl;
   /*--- Throw error if there is no file ---*/
   if (motion_file.fail()) {
     cout << "There is no mesh motion file!" << endl;
@@ -4158,7 +4170,7 @@ void CSurfaceMovement::SetExternal_Deformation(CGeometry *geometry, CConfig *con
     if (nDim == 2) point_line >> iPoint >> NewCoord[0] >> NewCoord[1];
     if (nDim == 3) point_line >> iPoint >> NewCoord[0] >> NewCoord[1] >> NewCoord[2];
     for (iMarker = 0; iMarker < config->GetnMarker_All(); iMarker++) {
-      if (config->GetMarker_All_Moving(iMarker) == YES) {
+      if (config->GetMarker_All_DV(iMarker) == YES) {
         for (iVertex = 0; iVertex < geometry->nVertex[iMarker]; iVertex++) {
           jPoint = geometry->vertex[iMarker][iVertex]->GetNode();
           GlobalIndex = geometry->node[jPoint]->GetGlobalIndex();
