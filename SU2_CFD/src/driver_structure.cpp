@@ -5368,8 +5368,8 @@ void CHBMultiZoneDriver::Run() {
   /*--- Run a single iteration of a Harmonic Balance problem. Preprocess all
    all zones before beginning the iteration. ---*/
 
-  for (iZone = 0; iZone < nZone; iZone++)
-    SetHarmonicBalance(iZone);
+  for (iTimeInstance = 0; iTimeInstance < nTotTimeInstances; iTimeInstance++)
+    SetHarmonicBalance(iTimeInstance);
 
 
   for (iTimeInstance = 0; iTimeInstance < nTotTimeInstances; iTimeInstance++)
@@ -6020,18 +6020,18 @@ void CDiscAdjHBMultiZone::DirectRun(){
   if (rank == MASTER_NODE)
       SetAvgTurboPerformance_HB(iTimeInstance);
 
-//cout << "===========================" << endl;
-//cout << "EXT_ITER: " <<  ExtIter << endl;
-//    for (iZone = 0; iZone < nZone; iZone++) {
-//    if (rank == MASTER_NODE ) {
-//      cout << " Zone " << iZone << ": R[0]: "<< log10(solver_container[iZone][MESH_0][FLOW_SOL]->GetRes_RMS(0))
-//                                << "  R[1]: "<< log10(solver_container[iZone][MESH_0][FLOW_SOL]->GetRes_RMS(1))
-//                                << "  R[2]: "<< log10(solver_container[iZone][MESH_0][FLOW_SOL]->GetRes_RMS(2)) << endl;
-//      if ( config_container[iZone]->GetKind_Turb_Model() != NONE && !config_container[iZone]->GetFrozen_Visc_Disc()) {
-//        cout <<"       log10[RMS k]: " << log10(solver_container[iZone][MESH_0][TURB_SOL]->GetRes_RMS(0)) << endl;
-//      }
-//    }
-//  }
+cout << "===========================" << endl;
+cout << "EXT_ITER: " <<  ExtIter << endl;
+    for (iZone = 0; iZone < nZone; iZone++) {
+    if (rank == MASTER_NODE ) {
+      cout << " Zone " << iZone << ": R[0]: "<< log10(solver_container[iZone][MESH_0][FLOW_SOL]->GetRes_RMS(0))
+                                << "  R[1]: "<< log10(solver_container[iZone][MESH_0][FLOW_SOL]->GetRes_RMS(1))
+                                << "  R[2]: "<< log10(solver_container[iZone][MESH_0][FLOW_SOL]->GetRes_RMS(2)) << endl;
+      if ( config_container[iZone]->GetKind_Turb_Model() != NONE && !config_container[iZone]->GetFrozen_Visc_Disc()) {
+        cout <<"       log10[RMS k]: " << log10(solver_container[iZone][MESH_0][TURB_SOL]->GetRes_RMS(0)) << endl;
+      }
+    }
+  }
 
 
 }
