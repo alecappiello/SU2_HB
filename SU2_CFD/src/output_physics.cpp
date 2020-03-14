@@ -246,7 +246,7 @@ void COutput::ComputeTurboPerformance(CSolver *solver_container, CGeometry *geom
 
 
       /*--- TURBO-PERFORMANCE---*/
-      EntropyGen[nMarkerTurboPerf*iTimeInstance + iMarkerTP][iSpan] = (EntropyOut[nMarkerTurboPerf*iTimeInstance + iMarkerTP][iSpan] - EntropyIn[nMarkerTurboPerf*iTimeInstance + iMarkerTP][iSpan])/VelSpout2_T;
+      EntropyGen[nMarkerTurboPerf*iTimeInstance + iMarkerTP][iSpan] = (EntropyOut[nMarkerTurboPerf*iTimeInstance + iMarkerTP][iSpan] - EntropyIn[nMarkerTurboPerf*iTimeInstance + iMarkerTP][iSpan]);///VelSpout2_T;
       EulerianWork[nMarkerTurboPerf*iTimeInstance + iMarkerTP][iSpan]       = TotalEnthalpyIn[nMarkerTurboPerf*iTimeInstance + iMarkerTP][iSpan] - TotalEnthalpyOut[nMarkerTurboPerf*iTimeInstance + iMarkerTP][iSpan];
       TotalPressureLoss[nMarkerTurboPerf*iTimeInstance + iMarkerTP][iSpan]  = (relPressureIn - relPressureOut)/(relPressureIn - PressureOut[nMarkerTurboPerf*iTimeInstance + iMarkerTP][iSpan]);
       KineticEnergyLoss[nMarkerTurboPerf*iTimeInstance + iMarkerTP][iSpan]  = 2*(EnthalpyOut[nMarkerTurboPerf*iTimeInstance + iMarkerTP][iSpan] - enthalpyOutIs)/relVelOutIs2;
