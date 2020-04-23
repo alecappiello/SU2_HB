@@ -3295,10 +3295,22 @@ public:
   su2double GetLinear_Solver_Error(void);
   
   /*!
+   * \brief Get min error of the linear solver for the implicit formulation.
+   * \return Min error of the linear solver for the implicit formulation.
+   */
+  su2double GetDeform_Linear_Solver_Error(void);
+  
+  /*!
    * \brief Get max number of iterations of the linear solver for the implicit formulation.
    * \return Max number of iterations of the linear solver for the implicit formulation.
    */
   unsigned long GetLinear_Solver_Iter(void);
+  
+  /*!
+   * \brief Get max number of iterations of the linear solver for the implicit formulation.
+   * \return Max number of iterations of the linear solver for the implicit formulation.
+   */
+  unsigned long GetDeform_Linear_Solver_Iter(void);
   
   /*!
    * \brief Get the ILU fill-in level for the linear solver.

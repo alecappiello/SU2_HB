@@ -300,6 +300,7 @@ void COutput::ComputeTurboPerformance(CSolver *solver_container, CGeometry *geom
     PressureRatio[nMarkerTurboPerf*iTimeInstance + nBladesRow + nStages][nSpanWiseSections]          = PressureRatio[nMarkerTurboPerf*iTimeInstance][config->GetnSpan_iZones(0)]*PressureOut[nMarkerTurboPerf*iTimeInstance][config->GetnSpan_iZones(0)]/PressureOut[nMarkerTurboPerf*iTimeInstance + nBladesRow-1][config->GetnSpan_iZones(nBladesRow-1)];
     MassFlowIn[nMarkerTurboPerf*iTimeInstance + nBladesRow + nStages][nSpanWiseSections]             = MassFlowIn[nMarkerTurboPerf*iTimeInstance][config->GetnSpan_iZones(0)];
     MassFlowOut[nMarkerTurboPerf*iTimeInstance + nBladesRow + nStages][nSpanWiseSections]            = MassFlowOut[nMarkerTurboPerf*iTimeInstance + nBladesRow-1][config->GetnSpan_iZones(nBladesRow-1)];
+    TotalWorkDone_D[nMarkerTurboPerf*iTimeInstance +  nBladesRow + nStages][nSpanWiseSections]           = 0.0;
 
     EntropyGen[nMarkerTurboPerf*iTimeInstance + nBladesRow + nStages][nSpanWiseSections]     = 0.0;
     for(iBlade = 0; iBlade < nBladesRow; iBlade++ ){

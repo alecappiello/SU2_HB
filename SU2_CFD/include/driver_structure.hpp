@@ -483,6 +483,9 @@ public:
    */
   su2double SetVertexVarCoord(unsigned short iMarker, unsigned short iVertex);
 
+  void SetTimeSpectral_Velocities(bool);
+
+  void ResetMesh_HB();
 };
 
 /*!
@@ -903,6 +906,13 @@ public:
    * \brief Monitor the computation.
    */
   bool Monitor(unsigned long ExtIter);
+
+  /*!
+   * \brief To set grid velocity for deforming Mesh
+   */
+  void SetTimeSpectral_Velocities(bool);
+
+  void ResetMesh_HB();
 
 };
 

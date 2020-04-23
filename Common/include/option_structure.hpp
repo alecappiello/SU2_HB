@@ -393,7 +393,9 @@ const int EL_TRIA = 0;		/*!< \brief Elements of three nodes (2D). */
 const int EL_QUAD = 1;		/*!< \brief Elements of four nodes (2D). */
 
 const int EL_TETRA = 0;		/*!< \brief Elements of four nodes (3D). */
-const int EL_HEXA = 1;		/*!< \brief Elements of eight nodes (3D). */
+const int EL_HEXA  = 1;		/*!< \brief Elements of eight nodes (3D). */
+const int EL_PYRAM = 2;    /*!< \brief Elements of five nodes (3D). */
+const int EL_PRISM = 3;    /*!< \brief Elements of six nodes (3D). */
 
 
 /*!
@@ -513,7 +515,9 @@ enum ENUM_GRIDMOVEMENT {
   AEROELASTIC_RIGID_MOTION = 10, /*!< \brief Simulation with rotation and aeroelastic motion. */
   STEADY_TRANSLATION = 11,    /*!< \brief Simulation in a steadily translating frame. */
   GUST = 12, /*!< \brief Simulation on a static mesh with a gust. */
-  MOVING_HTP = 13    /*!< \brief Simulation with moving HTP (rotation). */
+  MOVING_HTP = 13,    /*!< \brief Simulation with moving HTP (rotation). */
+  TURBO_VIBRATION = 14,
+  SURFACE_FILE_MOVEMENT = 15
 
 };
 
@@ -531,7 +535,9 @@ static const map<string, ENUM_GRIDMOVEMENT> GridMovement_Map = CCreateMap<string
 ("MOVING_HTP", MOVING_HTP)
 ("AEROELASTIC_RIGID_MOTION", AEROELASTIC_RIGID_MOTION)
 ("STEADY_TRANSLATION", STEADY_TRANSLATION)
-("GUST", GUST);
+("GUST", GUST)
+("TURBO_VIBRATION", TURBO_VIBRATION)
+("SURFACE_FILE_MOVEMENT", SURFACE_FILE_MOVEMENT);
 
 /*!
  * \brief type of wind gusts
@@ -1072,7 +1078,8 @@ enum ENUM_OBJECTIVE {
   MASS_FLOW_IN = 47,
   MASS_FLOW_OUT = 48,
   PRESSURE_RATIO = 49,
-  ENTROPY_GENERATION = 50
+  ENTROPY_GENERATION = 50,
+  NORMAL_GRID_VEL = 52
 };
 
 static const map<string, ENUM_OBJECTIVE> Objective_Map = CCreateMap<string, ENUM_OBJECTIVE>
@@ -1111,6 +1118,7 @@ static const map<string, ENUM_OBJECTIVE> Objective_Map = CCreateMap<string, ENUM
 ("MASS_FLOW_OUT", MASS_FLOW_OUT)
 ("PRESSURE_RATIO",  PRESSURE_RATIO)
 ("ENTROPY_GENERATION",  ENTROPY_GENERATION)
+("NORMAL_GRID_VEL",  NORMAL_GRID_VEL)
 ("KINETIC_ENERGY_LOSS", KINETIC_ENERGY_LOSS);
 
 /*!

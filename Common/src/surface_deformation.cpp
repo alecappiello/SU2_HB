@@ -3538,6 +3538,8 @@ void CSurfaceMovement::Surface_Pitching(CGeometry *geometry, CConfig *config,
   unsigned long iPoint, iVertex;
   string Marker_Tag, Moving_Tag;
   int rank;
+  bool harmonic_balance = (config->GetUnsteady_Simulation() == HARMONIC_BALANCE);
+  bool restart = (config->GetRestart()||config->GetDiscrete_Adjoint());
 
 #ifdef HAVE_MPI
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -3553,8 +3555,26 @@ void CSurfaceMovement::Surface_Pitching(CGeometry *geometry, CConfig *config,
   deltaT = config->GetDelta_UnstTimeND();
   Lref   = config->GetLength_Ref();
 
+  if (harmonic_balance){
+	  iZone=ZONE_0;
+	  /*--- period of oscillation & compute time interval using nTimeInstances ---*/
+	  su2double period = config->GetHarmonicBalance_Period();
+	  period /= config->GetTime_Ref();
+	  deltaT = period/(su2double)(config->GetnTimeInstances());
+  }
+
   /*--- Compute delta time based on physical time step ---*/
   time_new = static_cast<su2double>(iter)*deltaT;
+
+  if (harmonic_balance) {
+  	/*--- For harmonic balance, begin movement from the zero position ---*/
+  	time_old = 0.0;
+  } else {
+  	time_old = time_new;
+  	if (iter != 0) time_old = (static_cast<su2double>(iter)-1.0)*deltaT;
+  }
+
+/*
   if (iter == 0) {
     time_old = time_new;
   } else {
@@ -3667,9 +3687,9 @@ void CSurfaceMovement::Surface_Pitching(CGeometry *geometry, CConfig *config,
 
             /*--- Calculate delta change in the x, y, & z directions ---*/
             for (iDim = 0; iDim < nDim; iDim++)
-              VarCoord[iDim] = (rotCoord[iDim]-Coord[iDim])/Lref;
-            if (nDim == 2) VarCoord[nDim] = 0.0;
-
+            	VarCoord[iDim] = (rotCoord[iDim]-Coord[iDim])/Lref;
+            if (nDim == 2)
+            	VarCoord[nDim] = 0.0;
             /*--- Set node displacement for volume deformation ---*/
             geometry->vertex[iMarker][iVertex]->SetVarCoord(VarCoord);
 
@@ -3679,6 +3699,94 @@ void CSurfaceMovement::Surface_Pitching(CGeometry *geometry, CConfig *config,
     }
   }
   /*--- For pitching we don't update the motion origin and moment reference origin. ---*/
+}
+
+void CSurfaceMovement::Surface_File_Movement(CGeometry *geometry, CConfig *config,
+                                        unsigned long iter, unsigned short iZone, bool reset) {
+  su2double deltaT, time_new, time_old, Lref, *Coord;
+  su2double Center[3], VarCoord[3], Omega[3], Ampl[3], Phase[3];
+  su2double rotCoord[3], r[3] = {0.0,0.0,0.0};
+  su2double rotMatrix[3][3] = {{0.0,0.0,0.0}, {0.0,0.0,0.0}, {0.0,0.0,0.0}};
+  su2double dtheta, dphi, dpsi, cosTheta, sinTheta;
+  su2double cosPhi, sinPhi, cosPsi, sinPsi;
+  su2double DEG2RAD = PI_NUMBER/180.0;
+  unsigned short iMarker, jMarker, Moving, iDim, nDim = geometry->GetnDim();
+  unsigned long iPoint, iVertex;
+  string Marker_Tag, Moving_Tag;
+  int rank;
+  bool harmonic_balance = (config->GetUnsteady_Simulation() == HARMONIC_BALANCE);
+  bool restart = (config->GetRestart()||config->GetDiscrete_Adjoint());
+
+  char cstr[200], buffer[50];
+
+#ifdef HAVE_MPI
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+#else
+  rank = MASTER_NODE;
+#endif
+
+  /*--- Initialize the delta variation in coordinates ---*/
+  VarCoord[0] = 0.0; VarCoord[1] = 0.0; VarCoord[2] = 0.0;
+
+  /*--- Retrieve values from the config file ---*/
+
+  deltaT = config->GetDelta_UnstTimeND();
+  Lref   = config->GetLength_Ref();
+
+  if (harmonic_balance){
+    iZone=ZONE_0;
+    /*--- period of oscillation & compute time interval using nTimeInstances ---*/
+    su2double period = config->GetHarmonicBalance_Period();
+    period /= config->GetTime_Ref();
+    deltaT = period/(su2double)(config->GetnTimeInstances());
+  }
+
+  /*--- Check whether a surface file exists for input ---*/
+  ofstream Surface_File;
+  string filename = config->GetMotion_FileName();
+  filename = filename.substr(0,filename.size()-4);
+  strcpy (cstr, filename.c_str());
+  SPRINTF (buffer, "_%d.txt", SU2_TYPE::Int(iter));
+
+  strcat(cstr, buffer);
+
+  Surface_File.open(cstr, ios::in);
+
+  /*--- A surface file does not exist, so write a new one for the
+   markers that are specified as part of the motion. ---*/
+  if (Surface_File.fail()) {
+
+    if (rank == MASTER_NODE)
+      cout << "No surface file found. Writing a new file: " << cstr << "." << endl;
+
+    Surface_File.open(filename.c_str(), ios::out);
+    Surface_File.precision(15);
+    unsigned long iMarker, jPoint, GlobalIndex, iVertex; su2double *Coords;
+    for (iMarker = 0; iMarker < config->GetnMarker_All(); iMarker++) {
+      if (config->GetMarker_All_DV(iMarker) == YES) {
+        for (iVertex = 0; iVertex < geometry->nVertex[iMarker]; iVertex++) {
+          jPoint = geometry->vertex[iMarker][iVertex]->GetNode();
+          GlobalIndex = geometry->node[jPoint]->GetGlobalIndex();
+          Coords = geometry->node[jPoint]->GetCoord();
+          Surface_File << GlobalIndex << "\t" << Coords[0] << "\t" << Coords[1];
+          if (geometry->GetnDim() == 2) Surface_File << endl;
+          else Surface_File << "\t" << Coords[2] << endl;
+        }
+      }
+    }
+    Surface_File.close();
+
+    /*--- A surface file exists, so read in the coordinates ---*/
+
+  }
+  else {
+    Surface_File.close();
+    if (rank == MASTER_NODE) cout << "Updating the surface coordinates from the input file: " << cstr <<"." << endl;
+    SetExternal_Deformation(geometry, config, iter, 0);
+  }
+
+  //exit(EXIT_FAILURE);
+
 }
 
 void CSurfaceMovement::Surface_Rotating(CGeometry *geometry, CConfig *config,
@@ -4145,16 +4253,16 @@ void CSurfaceMovement::SetExternal_Deformation(CGeometry *geometry, CConfig *con
 
   /*--- Open the motion file ---*/
 
-  //if (config->GetUnsteady_Simulation()==HARMONIC_BALANCE && config->GetKind_SU2() == SU2_CFD ){
-  //  motion_filename = motion_filename.substr(0,motion_filename.size()-4);
-  //  strcpy (cstr, motion_filename.c_str());
-  //  SPRINTF (buffer, "_%d.txt", SU2_TYPE::Int(iZone));
-  //  strcat(cstr, buffer);
-  //  motion_file.open(cstr, ios::in);
- // }
-  //else{
+  if (config->GetUnsteady_Simulation()==HARMONIC_BALANCE && config->GetKind_SU2() == SU2_CFD ){
+    motion_filename = motion_filename.substr(0,motion_filename.size()-4);
+    strcpy (cstr, motion_filename.c_str());
+    SPRINTF (buffer, "_%d.txt", SU2_TYPE::Int(iZone));
+    strcat(cstr, buffer);
+    motion_file.open(cstr, ios::in);
+  }
+  else{
     motion_file.open(motion_filename.data(), ios::in);
-  //}
+  }
 
   cout << "Motion updated using file "<<cstr<< " !" << endl;
   /*--- Throw error if there is no file ---*/

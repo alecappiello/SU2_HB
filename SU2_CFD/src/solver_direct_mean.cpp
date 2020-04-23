@@ -5597,14 +5597,14 @@ void CEulerSolver::Pressure_Forces(CGeometry *geometry, CConfig *config) {
             }
             break;
           }
-//          case NORMAL_GRID_VEL:
-//          {
-//           su2double *Grid_Vel;
-//            Grid_Vel = geometry->node[iPoint]->GetGridVel();
-//            for (iDim = 0; iDim<nDim; iDim++)
-//              LocalWork += Grid_Vel[iDim] * Normal[iDim];
-//            break;
-//          }
+          case NORMAL_GRID_VEL:
+          {
+            su2double *Grid_Vel;
+            Grid_Vel = geometry->node[iPoint]->GetGridVel();
+            for (iDim = 0; iDim<nDim; iDim++)
+              LocalWork += Grid_Vel[iDim] * Normal[iDim];
+            break;
+          }
           default:
             break;
           }
@@ -9892,7 +9892,7 @@ void CEulerSolver::BC_TurboRiemann(CGeometry *geometry, CSolver **solver_contain
           T_Total  = config->GetRiemann_Var2(Marker_Tag);
           Flow_Dir = config->GetRiemann_FlowDir(Marker_Tag);
 
-          P_Total = P_Total+(P_Total*config->GetHarmonicBalance_InAmp()*sin(16686.265254*deltaT*iZone));
+          P_Total = P_Total+(P_Total*config->GetHarmonicBalance_InAmp()*sin(6.2831853071796*deltaT*iZone));
 //          cout<<"iZone :: "<<iZone<<" P_Tot :: "<<P_Total<<endl;
 
           /*--- Non-dim. the inputs if necessary. ---*/
@@ -13822,7 +13822,7 @@ void CEulerSolver::LoadRestart(CGeometry **geometry, CSolver ***solver, CConfig 
   bool steady_restart = config->GetSteadyRestart();
   bool time_stepping = config->GetUnsteady_Simulation() == TIME_STEPPING;
   bool harmonic_balance = config->GetUnsteady_Simulation() == HARMONIC_BALANCE;
-//  bool harmonic_balance = config->GetUnsteady_Simulation() == HARMONIC_BALANCE && !config->GetDiscrete_Adjoint();
+  bool disc_adjoint = config->GetDiscrete_Adjoint();
 
   string UnstExt, text_line;
   ifstream restart_file;

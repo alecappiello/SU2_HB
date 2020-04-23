@@ -334,6 +334,23 @@ void CIteration::SetGrid_Movement(CGeometry ***geometry_container,
     case STEADY_TRANSLATION: case MOVING_WALL: case ROTATING_FRAME:
       break;
 
+    case TURBO_VIBRATION:
+    	if (rank == MASTER_NODE)
+    		cout << endl<< "----------------------- TURBO VIBRATION --(ZONE "<< val_iZone << " GEOMZONE " << iGeomZone << ") ----------------------" << endl;
+    	surface_movement[val_iZone]->Surface_Pitching(geometry_container[val_iZone][MESH_0],config_container[iGeomZone],ExtIter,iGeomZone);
+        grid_movement[val_iZone]->SetVolume_Deformation_Elas(geometry_container[val_iZone][MESH_0], config_container[iGeomZone], true, false);
+    	//grid_movement[val_iZone]->SetVolume_Deformation(geometry_container[val_iZone][MESH_0], config_container[val_iZone], true, false);
+    	grid_movement[val_iZone]->UpdateMultiGrid(geometry_container[val_iZone], config_container[iGeomZone]);
+    	break;
+
+    case SURFACE_FILE_MOVEMENT:
+      if (rank == MASTER_NODE)
+        cout << endl<< "----------------------- SURFACE FILE--(ZONE "<< val_iZone << " GEOMZONE " << iGeomZone << ") ----------------------" << endl;
+      surface_movement[val_iZone]->Surface_File_Movement(geometry_container[val_iZone][MESH_0],config_container[iGeomZone],ExtIter,iGeomZone,false);
+      grid_movement[val_iZone]->SetVolume_Deformation_Elas(geometry_container[val_iZone][MESH_0], config_container[iGeomZone], true, false);
+      grid_movement[val_iZone]->UpdateMultiGrid(geometry_container[val_iZone], config_container[iGeomZone]);
+      break;
+
     case NO_MOVEMENT: case GUST: default:
 
       /*--- There is no mesh motion specified for this zone. ---*/

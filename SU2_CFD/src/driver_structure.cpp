@@ -184,7 +184,7 @@ CDriver::CDriver(char* confFile,
     }
 
   }
-
+bool harmonic_balance = config_container[ZONE_0]->GetUnsteady_Simulation() == HARMONIC_BALANCE;
   /*--- If activated by the compile directive, perform a partition analysis. ---*/
 #if PARTITION
   Partition_Analysis(geometry_container[ZONE_0][MESH_0], config_container[ZONE_0]);
@@ -303,7 +303,9 @@ CDriver::CDriver(char* confFile,
   /*--- Instantiate the geometry movement classes for the solution of unsteady
    flows on dynamic meshes, including rigid mesh transformations, dynamically
    deforming meshes, and preprocessing of harmonic balance. ---*/
-  bool restart      = (config_container[ZONE_0]->GetRestart() ||  config_container[ZONE_0]->GetDiscrete_Adjoint());
+
+  bool discrete_adjoint = config_container[ZONE_0]->GetDiscrete_Adjoint();
+  bool restart = config_container[ZONE_0]->GetRestart();
 
   for (iZone = 0; iZone < nZone; iZone++) {
 
@@ -311,12 +313,14 @@ CDriver::CDriver(char* confFile,
         (config_container[iZone]->GetDirectDiff() == D_DESIGN)) {
       if (rank == MASTER_NODE)
         cout << "Setting dynamic mesh structure for zone "<< iZone<<"." << endl;
-      grid_movement[iZone] = new CVolumetricMovement(geometry_container[iZone][MESH_0], config_container[iZone]);
+//      grid_movement[iZone] = new CVolumetricMovement(geometry_container[iZone][MESH_0], config_container[iZone]);
+      grid_movement[iZone] = new CElasticityMovement(geometry_container[iZone][MESH_0], config_container[iZone]);
       FFDBox[iZone] = new CFreeFormDefBox*[MAX_NUMBER_FFD];
       surface_movement[iZone] = new CSurfaceMovement();
       surface_movement[iZone]->CopyBoundary(geometry_container[iZone][MESH_0], config_container[iZone]);
-      if (config_container[iZone]->GetUnsteady_Simulation() == HARMONIC_BALANCE && !restart  ){
+      if (config_container[iZone]->GetUnsteady_Simulation() == HARMONIC_BALANCE && !discrete_adjoint && !restart){
         iteration_container[iZone]->SetGrid_Movement(geometry_container, surface_movement, grid_movement, FFDBox, solver_container, config_container, iZone, 0, 0);
+        geometry_container[iZone][MESH_0]->UpdateGeometry(geometry_container[iZone],config_container[iZone]);
         geometry_container[iZone][MESH_0]->UpdateTurboVertex(config_container[iZone], iZone, INFLOW);
         geometry_container[iZone][MESH_0]->UpdateTurboVertex(config_container[iZone], iZone, OUTFLOW);
 //        SetHarmonicBalance(iZone);
@@ -360,6 +364,10 @@ CDriver::CDriver(char* confFile,
   Kind_Grid_Movement = config_container[ZONE_0]->GetKind_GridMovement(ZONE_0);
   initStaticMovement = (config_container[ZONE_0]->GetGrid_Movement() && (Kind_Grid_Movement == MOVING_WALL
                         || Kind_Grid_Movement == ROTATING_FRAME || Kind_Grid_Movement == STEADY_TRANSLATION));
+
+//  if( !discrete_adjoint && !restart && harmonic_balance)
+//    if (config_container[ZONE_0]->GetGrid_Movement())
+//      SetTimeSpectral_Velocities(false);
 
 
   if(initStaticMovement){
@@ -444,6 +452,7 @@ void CDriver::Postprocessing() {
     for (iZone = 0; iZone < nZone; iZone++) {
       ConvHist_file[iZone].close();
     }
+    delete [] ConvHist_file;
 
   }
 
@@ -3596,6 +3605,188 @@ su2double CDriver::SetVertexVarCoord(unsigned short iMarker, unsigned short iVer
 
 }
 
+void CDriver::SetTimeSpectral_Velocities(bool reset){
+  cout<< "Setting Rotational velocity \n";
+  unsigned long iPoint;
+  su2double RotVel[3], Distance[3], *Coord, Center[3], Omega[3], L_Ref;
+  unsigned short nDim = geometry_container[ZONE_0][MESH_0]->GetnDim();
+
+  int rank = MASTER_NODE;
+#ifdef HAVE_MPI
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+#endif
+
+  /*--- Center of rotation & angular velocity vector from config ---*/
+
+  Center[0] = config_container[ZONE_0]->GetMotion_Origin_X(ZONE_0);
+  Center[1] = config_container[ZONE_0]->GetMotion_Origin_Y(ZONE_0);
+  Center[2] = config_container[ZONE_0]->GetMotion_Origin_Z(ZONE_0);
+  Omega[0]  = config_container[ZONE_0]->GetRotation_Rate_X(ZONE_0)/config_container[ZONE_0]->GetOmega_Ref();
+  Omega[1]  = config_container[ZONE_0]->GetRotation_Rate_Y(ZONE_0)/config_container[ZONE_0]->GetOmega_Ref();
+  Omega[2]  = config_container[ZONE_0]->GetRotation_Rate_Z(ZONE_0)/config_container[ZONE_0]->GetOmega_Ref();
+  L_Ref     = config_container[ZONE_0]->GetLength_Ref();
+
+  /*--- Print some information to the console ---*/
+
+  if (rank == MASTER_NODE) {
+    cout << " Rotational origin (x, y, z): ( " << Center[0] << ", " << Center[1];
+    cout << ", " << Center[2] << " )" << endl;
+    cout << " Angular velocity about x, y, z axes: ( " << Omega[0] << ", ";
+    cout << Omega[1] << ", " << Omega[2] << " ) rad/s" << endl;
+  }
+
+  /*--- Loop over all nodes and set the rotational velocity ---*/
+  for (unsigned short iMGlevel = 0; iMGlevel <= config_container[ZONE_0]->GetnMGLevels(); iMGlevel++) {
+
+    /*--- Loop over each node in the volume mesh ---*/
+    for (iZone = 0; iZone < nZone; iZone++) {
+
+
+      for (iPoint = 0; iPoint < geometry_container[ZONE_0][iMGlevel]->GetnPoint(); iPoint++) {
+
+    /*--- Get the coordinates of the current node ---*/
+
+    Coord = geometry_container[iZone][iMGlevel]->node[iPoint]->GetCoord();
+
+    /*--- Calculate the non-dim. distance from the rotation center ---*/
+
+    Distance[0] = (Coord[0]-Center[0])/L_Ref;
+    Distance[1] = (Coord[1]-Center[1])/L_Ref;
+    Distance[2] = 0.0;
+    if (nDim == 3)
+      Distance[2] = (Coord[2]-Center[2])/L_Ref;
+
+    /*--- Calculate the angular velocity as omega X r ---*/
+//    cout<< "Omega :: "<<Omega[2]<<endl;
+//    cout<<"Dist :: "<<Distance[0]<<" "<<Distance[1]<<endl;
+    RotVel[0] = Omega[1]*(Distance[2]) - Omega[2]*(Distance[1]);
+    RotVel[1] = Omega[2]*(Distance[0]) - Omega[0]*(Distance[2]);
+    RotVel[2] = 0.0;
+    if (nDim == 3)
+      RotVel[2] = Omega[0]*(Distance[1]) - Omega[1]*(Distance[0]);
+
+    /*--- Store the grid velocity at this node ---*/
+
+    geometry_container[iZone][iMGlevel]->node[iPoint]->SetGridVel(RotVel);
+
+      }
+    }
+  }
+
+	cout<<"\n At SET TIME SPECTRAL VELOCITIES :: CDrive \n";
+	  unsigned short iZone, jDegree, iDim, iMGlevel;
+
+
+	  su2double angular_interval = 2.0*PI_NUMBER/(su2double)(nZone);
+//	  su2double *Coord;
+	  su2double *GridVel;
+//unsigned long iPoint;
+	  cout<<"Angural interval :: "<<angular_interval<<endl;
+
+	  /*--- Compute period of oscillation & compute time interval using nTimeInstances ---*/
+	  su2double period = config_container[ZONE_0]->GetHarmonicBalance_Period();//config_container[ZONE_0]->GetTimeSpectral_Period();
+	  period /= config_container[ZONE_0]->GetTime_Ref();
+	  su2double deltaT = period/(su2double)(config_container[ZONE_0]->GetnTimeInstances());
+
+	  /*--- allocate dynamic memory for angular positions (these are the abscissas) ---*/
+	  su2double *angular_positions = new su2double [nZone];
+	  for (iZone = 0; iZone < nZone; iZone++) {
+	    angular_positions[iZone] = iZone*angular_interval;
+	  }
+
+	  /*--- find the highest-degree trigonometric polynomial allowed by the Nyquist criterion---*/
+	  su2double high_degree = (nZone-1)/2.0;
+	  int highest_degree = SU2_TYPE::Int(high_degree);
+
+	  /*--- allocate dynamic memory for a given point's coordinates ---*/
+	  su2double **coords = new su2double *[nZone];
+	  for (iZone = 0; iZone < nZone; iZone++) {
+	    coords[iZone] = new su2double [nDim];
+	  }
+
+	  /*--- allocate dynamic memory for vectors of Fourier coefficients ---*/
+	  su2double *a_coeffs = new su2double [highest_degree+1];
+	  su2double *b_coeffs = new su2double [highest_degree+1];
+
+	  /*--- allocate dynamic memory for the interpolated positions and velocities ---*/
+	  su2double *fitted_coords = new su2double [nZone];
+	  su2double *fitted_velocities = new su2double [nZone];
+
+	  /*--- Loop over all grid levels ---*/
+	  for (iMGlevel = 0; iMGlevel <= config_container[ZONE_0]->GetnMGLevels(); iMGlevel++) {
+
+	    /*--- Loop over each node in the volume mesh ---*/
+	    for (iPoint = 0; iPoint < geometry_container[ZONE_0][iMGlevel]->GetnPoint(); iPoint++) {
+
+	      /*--- Populate the 2D coords array with the
+	       coordinates of a given mesh point across
+	       the time instances (i.e. the Zones) ---*/
+	      /*--- Loop over each zone ---*/
+	      for (iZone = 0; iZone < nZone; iZone++) {
+	        /*--- get the coordinates of the given point ---*/
+	        Coord = geometry_container[iZone][iMGlevel]->node[iPoint]->GetCoord();
+	        for (iDim = 0; iDim < nDim; iDim++) {
+	          /*--- add them to the appropriate place in the 2D coords array ---*/
+	          coords[iZone][iDim] = Coord[iDim];
+	        }
+	      }
+
+	      /*--- Loop over each Dimension ---*/
+	      for (iDim = 0; iDim < nDim; iDim++) {
+
+	        /*--- compute the Fourier coefficients ---*/
+	        for (jDegree = 0; jDegree < highest_degree+1; jDegree++) {
+	          a_coeffs[jDegree] = 0;
+	          b_coeffs[jDegree] = 0;
+	          for (iZone = 0; iZone < nZone; iZone++) {
+	            a_coeffs[jDegree] = a_coeffs[jDegree] + (2.0/(su2double)nZone)*cos(jDegree*angular_positions[iZone])*coords[iZone][iDim];
+	            b_coeffs[jDegree] = b_coeffs[jDegree] + (2.0/(su2double)nZone)*sin(jDegree*angular_positions[iZone])*coords[iZone][iDim];
+	          }
+	        }
+
+	        /*--- find the interpolation of the coordinates and its derivative (the velocities) ---*/
+	        for (iZone = 0; iZone < nZone; iZone++) {
+	          fitted_coords[iZone] = a_coeffs[0]/2.0;
+	          fitted_velocities[iZone] = 0.0;
+	          for (jDegree = 1; jDegree < highest_degree+1; jDegree++) {
+	            fitted_coords[iZone] = fitted_coords[iZone] + a_coeffs[jDegree]*cos(jDegree*angular_positions[iZone]) + b_coeffs[jDegree]*sin(jDegree*angular_positions[iZone]);
+	            fitted_velocities[iZone] = fitted_velocities[iZone] + (angular_interval/deltaT)*jDegree*(b_coeffs[jDegree]*cos(jDegree*angular_positions[iZone]) - a_coeffs[jDegree]*sin(jDegree*angular_positions[iZone]));
+	          }
+	        }
+
+	        /*--- Store grid velocity for this point, at this given dimension, across the Zones ---*/
+	    	  for (iZone = 0; iZone < nZone; iZone++) {
+	    		  GridVel = geometry_container[iZone][iMGlevel]->node[iPoint]->GetGridVel();
+	    		  Coord = geometry_container[iZone][iMGlevel]->node[iPoint]->GetCoord();
+	    		  if (reset)
+	    			  geometry_container[iZone][iMGlevel]->node[iPoint]->AddGridVel(iDim, 0.0);//fitted_velocities[iZone]
+	    		  else
+	    			  geometry_container[iZone][iMGlevel]->node[iPoint]->AddGridVel(iDim, fitted_velocities[iZone]);
+	    	  }
+	      }
+	    }
+	  }
+
+	  /*--- delete dynamic memory for the abscissas, coefficients, et cetera ---*/
+	  delete [] angular_positions;
+	  delete [] a_coeffs;
+	  delete [] b_coeffs;
+	  delete [] fitted_coords;
+	  delete [] fitted_velocities;
+	  for (iZone = 0; iZone < nZone; iZone++) {
+	    delete [] coords[iZone];
+	  }
+	  delete [] coords;
+    for (iMGlevel = 0; iMGlevel <= config_container[ZONE_0]->GetnMGLevels(); iMGlevel++) {
+      for (iZone = 0; iZone < nZone; iZone++) {
+        geometry_container[iZone][iMGlevel]->Set_MPI_Coord(config_container[ZONE_0]);
+        geometry_container[iZone][iMGlevel]->Set_MPI_GridVel(config_container[ZONE_0]);
+
+      }
+    }
+
+}
+
 CGeneralDriver::CGeneralDriver(char* confFile, unsigned short val_nZone,
                                unsigned short val_nDim, 
                                SU2_Comm MPICommunicator) : CDriver(confFile,
@@ -5683,6 +5874,150 @@ bool CHBMultiZoneDriver::Monitor(unsigned long ExtIter) {
 
 }
 
+void CHBMultiZoneDriver::SetTimeSpectral_Velocities(bool reset){
+
+//	cout<<"\n\n\n At SET TIME SPECTRAL VELOCITIES :: CHBMultiZoneDrive \n\n\n";
+	  unsigned short iZone, jDegree, iDim, iMGlevel;
+	  unsigned short nDim = geometry_container[ZONE_0][MESH_0]->GetnDim();
+
+	  su2double angular_interval = 2.0*PI_NUMBER/(su2double)(nZone);
+	  su2double *Coord;
+	  su2double *GridVel;
+	  unsigned long iPoint;
+//	  cout<<"Angural interval :: "<<angular_interval<<endl;
+
+	  /*--- Compute period of oscillation & compute time interval using nTimeInstances ---*/
+	  su2double period = config_container[ZONE_0]->GetHarmonicBalance_Period();//config_container[ZONE_0]->GetTimeSpectral_Period();
+	  period /= (su2double)config_container[ZONE_0]->GetTime_Ref();
+	  su2double deltaT = period/(su2double)(config_container[ZONE_0]->GetnTimeInstances());
+
+	  /*--- allocate dynamic memory for angular positions (these are the abscissas) ---*/
+	  su2double *angular_positions = new su2double [nZone];
+	  for (iZone = 0; iZone < nZone; iZone++) {
+	    angular_positions[iZone] = iZone*angular_interval;
+	  }
+
+	  /*--- find the highest-degree trigonometric polynomial allowed by the Nyquist criterion---*/
+	  su2double high_degree = (nZone-1)/2.0;
+	  int highest_degree = SU2_TYPE::Int(high_degree);
+
+	  /*--- allocate dynamic memory for a given point's coordinates ---*/
+	  su2double **coords = new su2double *[nZone];
+	  for (iZone = 0; iZone < nZone; iZone++) {
+	    coords[iZone] = new su2double [nDim];
+	  }
+
+	  /*--- allocate dynamic memory for vectors of Fourier coefficients ---*/
+	  su2double *a_coeffs = new su2double [highest_degree+1];
+	  su2double *b_coeffs = new su2double [highest_degree+1];
+
+	  /*--- allocate dynamic memory for the interpolated positions and velocities ---*/
+	  su2double *fitted_coords = new su2double [nZone];
+	  su2double *fitted_velocities = new su2double [nZone];
+
+	  /*--- Loop over all grid levels ---*/
+	  for (iMGlevel = 0; iMGlevel <= config_container[ZONE_0]->GetnMGLevels(); iMGlevel++) {
+
+	    /*--- Loop over each node in the volume mesh ---*/
+	    for (iPoint = 0; iPoint < geometry_container[ZONE_0][iMGlevel]->GetnPoint(); iPoint++) {
+
+	      /*--- Populate the 2D coords array with the
+	       coordinates of a given mesh point across
+	       the time instances (i.e. the Zones) ---*/
+	      /*--- Loop over each zone ---*/
+	      for (iZone = 0; iZone < nZone; iZone++) {
+	        /*--- get the coordinates of the given point ---*/
+	        Coord = geometry_container[iZone][iMGlevel]->node[iPoint]->GetCoord();
+	        for (iDim = 0; iDim < nDim; iDim++) {
+	          /*--- add them to the appropriate place in the 2D coords array ---*/
+	          coords[iZone][iDim] = Coord[iDim];
+	        }
+	      }
+
+	      /*--- Loop over each Dimension ---*/
+	      for (iDim = 0; iDim < nDim; iDim++) {
+
+	        /*--- compute the Fourier coefficients ---*/
+	        for (jDegree = 0; jDegree < highest_degree+1; jDegree++) {
+	          a_coeffs[jDegree] = 0;
+	          b_coeffs[jDegree] = 0;
+	          for (iZone = 0; iZone < nZone; iZone++) {
+	            a_coeffs[jDegree] = a_coeffs[jDegree] + (2.0/(su2double)nZone)*cos(jDegree*angular_positions[iZone])*coords[iZone][iDim];
+	            b_coeffs[jDegree] = b_coeffs[jDegree] + (2.0/(su2double)nZone)*sin(jDegree*angular_positions[iZone])*coords[iZone][iDim];
+	          }
+	        }
+
+	        /*--- find the interpolation of the coordinates and its derivative (the velocities) ---*/
+	        for (iZone = 0; iZone < nZone; iZone++) {
+	          fitted_coords[iZone] = a_coeffs[0]/2.0;
+	          fitted_velocities[iZone] = 0.0;
+	          for (jDegree = 1; jDegree < highest_degree+1; jDegree++) {
+	            fitted_coords[iZone] = fitted_coords[iZone] + a_coeffs[jDegree]*cos(jDegree*angular_positions[iZone]) + b_coeffs[jDegree]*sin(jDegree*angular_positions[iZone]);
+	            fitted_velocities[iZone] = fitted_velocities[iZone] + (angular_interval/deltaT)*jDegree*(b_coeffs[jDegree]*cos(jDegree*angular_positions[iZone]) - a_coeffs[jDegree]*sin(jDegree*angular_positions[iZone]));
+	          }
+	        }
+
+	        /*--- Store grid velocity for this point, at this given dimension, across the Zones ---*/
+	    	  for (iZone = 0; iZone < nZone; iZone++) {
+	    		  GridVel = geometry_container[iZone][iMGlevel]->node[iPoint]->GetGridVel();
+	    		  Coord = geometry_container[iZone][iMGlevel]->node[iPoint]->GetCoord();
+	    		  if (reset)
+	    			  geometry_container[iZone][iMGlevel]->node[iPoint]->SetGridVel(iDim, 0);//fitted_velocities[iZone]
+	    		  else
+	    			  geometry_container[iZone][iMGlevel]->node[iPoint]->SetGridVel(iDim, fitted_velocities[iZone]);
+	    	  }
+	      }
+	    }
+	  }
+
+	  /*--- delete dynamic memory for the abscissas, coefficients, et cetera ---*/
+	  delete [] angular_positions;
+	  delete [] a_coeffs;
+	  delete [] b_coeffs;
+	  delete [] fitted_coords;
+	  delete [] fitted_velocities;
+	  for (iZone = 0; iZone < nZone; iZone++) {
+	    delete [] coords[iZone];
+	  }
+	  delete [] coords;
+	  for (iMGlevel = 0; iMGlevel <= config_container[ZONE_0]->GetnMGLevels(); iMGlevel++) {
+		  for (iZone = 0; iZone < nZone; iZone++) {
+			  geometry_container[iZone][iMGlevel]->Set_MPI_Coord(config_container[ZONE_0]);
+			  geometry_container[iZone][iMGlevel]->Set_MPI_GridVel(config_container[ZONE_0]);
+
+		  }
+	  }
+
+}
+
+void CHBMultiZoneDriver::ResetMesh_HB(void){
+	unsigned short iMGlevel, iPoint, iZone, iDim;
+	unsigned short nDim = geometry_container[ZONE_0][MESH_0]->GetnDim();
+	unsigned short nZone = geometry_container[ZONE_0][MESH_0]->GetnZone();
+	su2double *Coord;
+	for (iMGlevel = 0; iMGlevel <= config_container[ZONE_0]->GetnMGLevels(); iMGlevel++) {
+		for (iPoint = 0; iPoint < geometry_container[ZONE_0][iMGlevel]->GetnPoint(); iPoint++) {
+
+			Coord = geometry_container[0][iMGlevel]->node[iPoint]->GetCoord();
+			for (iZone = 1; iZone < nZone; iZone++) {
+				for (iDim = 0; iDim < nDim; iDim++) {
+					geometry_container[iZone][iMGlevel]->node[iPoint]->SetCoord(iDim,Coord[iDim]);
+				}
+			}
+		}
+	}
+	if (config_container[ZONE_0]->GetGrid_Movement())
+	  SetTimeSpectral_Velocities(true);
+	for (iZone = 0; iZone < nZone; iZone++) {
+	  grid_movement[iZone]->UpdateDualGrid(geometry_container[iZone][MESH_0], config_container[iZone]);
+	  geometry_container[iZone][MESH_0]->UpdateGeometry(geometry_container[iZone],config_container[iZone]);
+      geometry_container[iZone][MESH_0]->UpdateTurboVertex(config_container[iZone], iZone, INFLOW);
+      geometry_container[iZone][MESH_0]->UpdateTurboVertex(config_container[iZone], iZone, OUTFLOW);
+	}
+}
+
+void CDriver::ResetMesh_HB(void){}
+
 CDiscAdjHBMultiZone::CDiscAdjHBMultiZone(char* confFile,
                                                            unsigned short val_nZone,
                                                            unsigned short val_nDim,
@@ -5730,7 +6065,7 @@ void CDiscAdjHBMultiZone::Run() {
 
   unsigned short iZone = 0, checkConvergence;
   unsigned long IntIter, nIntIter;
-
+  unsigned long ExtIter = config_container[ZONE_0]->GetExtIter();
   bool unsteady;
 
   unsteady = (config_container[MESH_0]->GetUnsteady_Simulation() == DT_STEPPING_1ST) || (config_container[MESH_0]->GetUnsteady_Simulation() == DT_STEPPING_2ND);
@@ -5908,6 +6243,19 @@ void CDiscAdjHBMultiZone::SetRecording(unsigned short kind_recording){
   for (iZone = 0; iZone < nZone; iZone++) {
     iteration_container[iZone]->SetDependencies(solver_container, geometry_container, config_container, iZone, kind_recording);
   }
+  if(config_container[ZONE_0]->GetGrid_Movement()){
+//    ResetMesh_HB();
+
+//    for (iZone = 0; iZone < nZone; iZone++)
+//      iteration_container[iZone]->SetGrid_Movement(geometry_container, surface_movement, grid_movement, FFDBox, solver_container, config_container, iZone, 0, 0);
+    if (rank == MASTER_NODE)
+      cout << " Updating turbovertex after rigid mesh transformation. " << endl;
+    for (iZone = 0; iZone < nZone; iZone++){
+      geometry_container[iZone][MESH_0]->UpdateTurboVertex(config_container[iZone], iZone, INFLOW);
+      geometry_container[iZone][MESH_0]->UpdateTurboVertex(config_container[iZone], iZone, OUTFLOW);
+    }
+    SetTimeSpectral_Velocities(false);
+  }
 
   /*--- Do one iteration of the direct flow solver ---*/
 
@@ -6060,6 +6408,9 @@ void CDiscAdjHBMultiZone::SetObjFunction(){
     solver_container[ZONE_0][MESH_0][FLOW_SOL]->AddTotal_ComboObj(output->GetPower_HB());
     break;
   case KINETIC_ENERGY_LOSS:
+    solver_container[ZONE_0][MESH_0][FLOW_SOL]->AddTotal_ComboObj(output->GetTotalWorkDone_HB());
+    break;
+  case NORMAL_GRID_VEL:
     solver_container[ZONE_0][MESH_0][FLOW_SOL]->AddTotal_ComboObj(output->GetTotalWorkDone_HB());
     break;
   default:
