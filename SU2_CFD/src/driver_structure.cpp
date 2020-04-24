@@ -6254,7 +6254,7 @@ void CDiscAdjHBMultiZone::SetRecording(unsigned short kind_recording){
       geometry_container[iZone][MESH_0]->UpdateTurboVertex(config_container[iZone], iZone, INFLOW);
       geometry_container[iZone][MESH_0]->UpdateTurboVertex(config_container[iZone], iZone, OUTFLOW);
     }
-    SetTimeSpectral_Velocities(false);
+//    SetTimeSpectral_Velocities(false);
   }
 
   /*--- Do one iteration of the direct flow solver ---*/

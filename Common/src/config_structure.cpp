@@ -305,6 +305,8 @@ void CConfig::SetPointersNull(void) {
   Marker_CfgFile_DeformNormal=NULL; Marker_All_DeformNormal=NULL; Marker_DeformNormal=NULL;
   Marker_CfgFile_DeformTangential=NULL; Marker_All_DeformTangential=NULL; Marker_DeformTangential=NULL;
   
+  Motion_Filename = NULL;
+
   Marker_DV                   = NULL;   Marker_Moving            = NULL;    Marker_Monitoring = NULL;
   Marker_Designing            = NULL;   Marker_GeoEval           = NULL;    Marker_Plotting   = NULL;
   Marker_Analyze              = NULL;   Marker_WallFunctions     = NULL;
@@ -1490,7 +1492,7 @@ void CConfig::SetConfig_Options(unsigned short val_iZone, unsigned short val_nZo
   /* DESCRIPTION: Value to move motion origins (1 or 0) */
   addUShortListOption("MOVE_MOTION_ORIGIN", nMoveMotion_Origin, MoveMotion_Origin);
   /* DESCRIPTION:  */
-  addStringOption("MOTION_FILENAME", Motion_Filename, string("mesh_motion.dat"));
+  addStringListOption("MOTION_FILENAME", nMotion_Filename, Motion_Filename);
 
   /*!\par CONFIG_CATEGORY: Grid adaptation \ingroup Config*/
   /*--- Options related to grid adaptation ---*/
@@ -5883,6 +5885,7 @@ CConfig::~CConfig(void) {
   if (Marker_Moving != NULL)           delete[] Marker_Moving;
   if (Marker_DeformNormal != NULL) delete [] Marker_DeformNormal;
   if (Marker_DeformTangential != NULL) delete [] Marker_DeformTangential;
+  if (Motion_Filename != NULL) delete [] Motion_Filename;
   if (Marker_Monitoring != NULL)      delete[] Marker_Monitoring;
   if (Marker_Designing != NULL)       delete[] Marker_Designing;
   if (Marker_GeoEval != NULL)         delete[] Marker_GeoEval;

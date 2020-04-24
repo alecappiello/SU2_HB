@@ -605,7 +605,7 @@ void SetProjection_AD(CGeometry *geometry, CConfig *config, CSurfaceMovement *su
   
   /*--- Call the surface deformation routine ---*/
   
-  surface_movement->SetSurface_Deformation(geometry, config);
+  surface_movement->SetSurface_Deformation(geometry, config, ZONE_0);
   
   /*--- Stop the recording --- */
   

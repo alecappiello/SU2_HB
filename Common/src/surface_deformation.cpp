@@ -41,7 +41,7 @@ CSurfaceMovement::CSurfaceMovement(void) {
 
 CSurfaceMovement::~CSurfaceMovement(void) {}
 
-void CSurfaceMovement::SetSurface_Deformation(CGeometry *geometry, CConfig *config) {
+void CSurfaceMovement::SetSurface_Deformation(CGeometry *geometry, CConfig *config, unsigned short iZone) {
 
   unsigned short iFFDBox, iDV, iLevel, iChild, iParent, jFFDBox, iMarker;
   unsigned short Degree_Unitary [] = {1,1,1}, BSpline_Unitary [] = {2,2,2};
@@ -420,7 +420,7 @@ void CSurfaceMovement::SetSurface_Deformation(CGeometry *geometry, CConfig *conf
 
     /*--- Check whether a surface file exists for input ---*/
     ofstream Surface_File;
-    string filename = config->GetMotion_FileName();
+    string filename = config->GetMotion_FileName(iZone);
     Surface_File.open(filename.c_str(), ios::in);
 
     /*--- A surface file does not exist, so write a new one for the
@@ -428,7 +428,7 @@ void CSurfaceMovement::SetSurface_Deformation(CGeometry *geometry, CConfig *conf
     if (Surface_File.fail()) {
 
       if (rank == MASTER_NODE)
-        cout << "No surface file found. Writing a new file: " << filename << "." << endl;
+        cout << "No surface file found. Writing a new file: " << filename << "." <<" iZone = "<<iZone<< endl;
 
       Surface_File.open(filename.c_str(), ios::out);
       Surface_File.precision(15);
@@ -454,7 +454,7 @@ void CSurfaceMovement::SetSurface_Deformation(CGeometry *geometry, CConfig *conf
     else {
       Surface_File.close();
       if (rank == MASTER_NODE) cout << "Updating the surface coordinates from the input file." << endl;
-      SetExternal_Deformation(geometry, config, ZONE_0, 0);
+      SetExternal_Deformation(geometry, config, iZone, 0);
     }
 
   }
@@ -596,7 +596,7 @@ void CSurfaceMovement::SetSurface_Derivative(CGeometry *geometry, CConfig *confi
 
   /*--- Run the surface deformation with DV_Value = 0.0 (no deformation at all) ---*/
 
-  SetSurface_Deformation(geometry, config);
+  SetSurface_Deformation(geometry, config, ZONE_0);
 }
 
 void CSurfaceMovement::CopyBoundary(CGeometry *geometry, CConfig *config) {
@@ -3743,7 +3743,7 @@ void CSurfaceMovement::Surface_File_Movement(CGeometry *geometry, CConfig *confi
 
   /*--- Check whether a surface file exists for input ---*/
   ofstream Surface_File;
-  string filename = config->GetMotion_FileName();
+  string filename = config->GetMotion_FileName(iZone);
   filename = filename.substr(0,filename.size()-4);
   strcpy (cstr, filename.c_str());
   SPRINTF (buffer, "_%d.txt", SU2_TYPE::Int(iter));
@@ -4214,7 +4214,7 @@ void CSurfaceMovement::SetExternal_Deformation(CGeometry *geometry, CConfig *con
   /*--- Load stuff from config ---*/
 
   nDim = geometry->GetnDim();
-  motion_filename = config->GetMotion_FileName();
+  motion_filename = config->GetMotion_FileName(iZone);
 
   /*--- Set the extension for the correct unsteady mesh motion file ---*/
 

@@ -1210,7 +1210,7 @@ public:
    * \param[in] geometry - Geometrical definition of the problem.
    * \param[in] config - Definition of the particular problem.
    */
-  void SetSurface_Deformation(CGeometry *geometry, CConfig *config);
+  void SetSurface_Deformation(CGeometry *geometry, CConfig *config, unsigned short iZone);
 
   /*!
    * \brief Compute the parametric coordinates of a grid point using a point inversion strategy
