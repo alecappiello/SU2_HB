@@ -5588,11 +5588,11 @@ void CEulerSolver::Pressure_Forces(CGeometry *geometry, CConfig *config) {
                 su2double *Grid_Vel;
                 Grid_Vel = geometry->node[iPoint]->GetGridVel();
                 for (iDim = 0; iDim<nDim; iDim++)
-                  LocalWork += -Pressure * Normal[iDim] * factor * AxiFactor * Grid_Vel[iDim];
+                  LocalWork += -Pressure * Normal[iDim];
               }
               else{
                 for (iDim = 0; iDim<nDim; iDim++)
-                  LocalWork += -Pressure * Normal[iDim] * factor * AxiFactor;
+                  LocalWork += -Pressure * Normal[iDim];
               }
             }
             break;

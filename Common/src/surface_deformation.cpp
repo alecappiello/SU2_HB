@@ -3733,57 +3733,57 @@ void CSurfaceMovement::Surface_File_Movement(CGeometry *geometry, CConfig *confi
   deltaT = config->GetDelta_UnstTimeND();
   Lref   = config->GetLength_Ref();
 
-  if (harmonic_balance){
-    iZone=ZONE_0;
-    /*--- period of oscillation & compute time interval using nTimeInstances ---*/
-    su2double period = config->GetHarmonicBalance_Period();
-    period /= config->GetTime_Ref();
-    deltaT = period/(su2double)(config->GetnTimeInstances());
-  }
+//  if (harmonic_balance){
+//    iZone=ZONE_0;
+//    /*--- period of oscillation & compute time interval using nTimeInstances ---*/
+//    su2double period = config->GetHarmonicBalance_Period();
+//    period /= config->GetTime_Ref();
+//    deltaT = period/(su2double)(config->GetnTimeInstances());
+//  }
 
   /*--- Check whether a surface file exists for input ---*/
-  ofstream Surface_File;
-  string filename = config->GetMotion_FileName(iZone);
-  filename = filename.substr(0,filename.size()-4);
-  strcpy (cstr, filename.c_str());
-  SPRINTF (buffer, "_%d.txt", SU2_TYPE::Int(iter));
-
-  strcat(cstr, buffer);
-
-  Surface_File.open(cstr, ios::in);
+//  ofstream Surface_File;
+//  string filename = config->GetMotion_FileName(iZone);
+//  filename = filename.substr(0,filename.size()-4);
+//  strcpy (cstr, filename.c_str());
+//  SPRINTF (buffer, "_%d.txt", SU2_TYPE::Int(iter));
+//
+//  strcat(cstr, buffer);
+//
+//  Surface_File.open(cstr, ios::in);
 
   /*--- A surface file does not exist, so write a new one for the
    markers that are specified as part of the motion. ---*/
-  if (Surface_File.fail()) {
-
-    if (rank == MASTER_NODE)
-      cout << "No surface file found. Writing a new file: " << cstr << "." << endl;
-
-    Surface_File.open(filename.c_str(), ios::out);
-    Surface_File.precision(15);
-    unsigned long iMarker, jPoint, GlobalIndex, iVertex; su2double *Coords;
-    for (iMarker = 0; iMarker < config->GetnMarker_All(); iMarker++) {
-      if (config->GetMarker_All_DV(iMarker) == YES) {
-        for (iVertex = 0; iVertex < geometry->nVertex[iMarker]; iVertex++) {
-          jPoint = geometry->vertex[iMarker][iVertex]->GetNode();
-          GlobalIndex = geometry->node[jPoint]->GetGlobalIndex();
-          Coords = geometry->node[jPoint]->GetCoord();
-          Surface_File << GlobalIndex << "\t" << Coords[0] << "\t" << Coords[1];
-          if (geometry->GetnDim() == 2) Surface_File << endl;
-          else Surface_File << "\t" << Coords[2] << endl;
-        }
-      }
-    }
-    Surface_File.close();
-
-    /*--- A surface file exists, so read in the coordinates ---*/
-
-  }
-  else {
-    Surface_File.close();
+//  if (Surface_File.fail()) {
+//
+//    if (rank == MASTER_NODE)
+//      cout << "No surface file found. Writing a new file: " << cstr << "." << endl;
+//
+//    Surface_File.open(filename.c_str(), ios::out);
+//    Surface_File.precision(15);
+//    unsigned long iMarker, jPoint, GlobalIndex, iVertex; su2double *Coords;
+//    for (iMarker = 0; iMarker < config->GetnMarker_All(); iMarker++) {
+//      if (config->GetMarker_All_DV(iMarker) == YES) {
+//        for (iVertex = 0; iVertex < geometry->nVertex[iMarker]; iVertex++) {
+//          jPoint = geometry->vertex[iMarker][iVertex]->GetNode();
+//          GlobalIndex = geometry->node[jPoint]->GetGlobalIndex();
+//          Coords = geometry->node[jPoint]->GetCoord();
+//          Surface_File << GlobalIndex << "\t" << Coords[0] << "\t" << Coords[1];
+//          if (geometry->GetnDim() == 2) Surface_File << endl;
+//          else Surface_File << "\t" << Coords[2] << endl;
+//        }
+//      }
+//    }
+//    Surface_File.close();
+//
+//    /*--- A surface file exists, so read in the coordinates ---*/
+//
+//  }
+//  else {
+//    Surface_File.close();
     if (rank == MASTER_NODE) cout << "Updating the surface coordinates from the input file: " << cstr <<"." << endl;
-    SetExternal_Deformation(geometry, config, iter, 0);
-  }
+    SetExternal_Deformation(geometry, config, iZone, 0);
+//  }
 
   //exit(EXIT_FAILURE);
 
@@ -4252,19 +4252,20 @@ void CSurfaceMovement::SetExternal_Deformation(CGeometry *geometry, CConfig *con
   }
 
   /*--- Open the motion file ---*/
-
+  cout << "Motion updated using file "<<motion_filename<< " !" << endl;
   if (config->GetUnsteady_Simulation()==HARMONIC_BALANCE && config->GetKind_SU2() == SU2_CFD ){
-    motion_filename = motion_filename.substr(0,motion_filename.size()-4);
-    strcpy (cstr, motion_filename.c_str());
-    SPRINTF (buffer, "_%d.txt", SU2_TYPE::Int(iZone));
-    strcat(cstr, buffer);
-    motion_file.open(cstr, ios::in);
+//    motion_filename = motion_filename.substr(0,motion_filename.size()-4);
+//    strcpy (cstr, motion_filename.c_str());
+//    SPRINTF (buffer, "_%d.txt", SU2_TYPE::Int(iZone));
+//    strcat(cstr, buffer);
+//    motion_file.open(cstr, ios::in);
+    motion_file.open(motion_filename.data(), ios::in);
   }
   else{
     motion_file.open(motion_filename.data(), ios::in);
   }
 
-  cout << "Motion updated using file "<<cstr<< " !" << endl;
+  cout << "Motion updated using file "<<motion_filename<< " !" << endl;
   /*--- Throw error if there is no file ---*/
   if (motion_file.fail()) {
     cout << "There is no mesh motion file!" << endl;

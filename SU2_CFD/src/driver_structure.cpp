@@ -365,9 +365,9 @@ bool harmonic_balance = config_container[ZONE_0]->GetUnsteady_Simulation() == HA
   initStaticMovement = (config_container[ZONE_0]->GetGrid_Movement() && (Kind_Grid_Movement == MOVING_WALL
                         || Kind_Grid_Movement == ROTATING_FRAME || Kind_Grid_Movement == STEADY_TRANSLATION));
 
-//  if( !discrete_adjoint && !restart && harmonic_balance)
-//    if (config_container[ZONE_0]->GetGrid_Movement())
-//      SetTimeSpectral_Velocities(false);
+  if( !discrete_adjoint && !restart && harmonic_balance)
+    if (config_container[ZONE_0]->GetGrid_Movement())
+      SetTimeSpectral_Velocities(false);
 
 
   if(initStaticMovement){
@@ -2561,6 +2561,7 @@ void CDriver::Interface_Preprocessing() {
 
           case TURBO_INTERPOLATION:
             interpolator_container[donorZone][targetZone] = new CTurboInterpolation(geometry_container, config_container, donorZone, targetZone);
+            cout<<"doner :: "<<donorZone<<" targer :: "<<targetZone<<endl;
             if (rank == MASTER_NODE) cout << "Turbomachinery interface interpolation." << endl;
 
             break;
@@ -2784,10 +2785,14 @@ void CDriver::TurbomachineryPreprocessing(){
   if (harmonic_balance){
     if (rank == MASTER_NODE) cout << "Set span-wise sections between zone interfaces." << endl;
     for (iTimeInstance = 0; iTimeInstance < nTimeInstances; iTimeInstance++) {
-      jTimeInstance = iTimeInstance;
+//      jTimeInstance = iTimeInstance;
       for (iGeomZone = 1; iGeomZone < nGeomZones; iGeomZone++) {
-        jTimeInstance += nTimeInstances;
-        transfer_container[jTimeInstance][iTimeInstance]->SetSpanWiseLevels(config_container[jTimeInstance], config_container[iTimeInstance]);
+//        jTimeInstance += iGeomZone * nTimeInstances;
+        donorZone = ((iGeomZone-1) * nTimeInstances)+iTimeInstance;
+        targetZone = ((iGeomZone) * nTimeInstances)+iTimeInstance;
+        cout<<"jInstance :: "<<targetZone<<" iInstance :: "<<donorZone<<endl;
+        if (transfer_container[targetZone][donorZone] != NULL)
+        transfer_container[targetZone][donorZone]->SetSpanWiseLevels(config_container[targetZone], config_container[donorZone]);
       }
     }
   }
@@ -2795,11 +2800,13 @@ void CDriver::TurbomachineryPreprocessing(){
   if (rank == MASTER_NODE) cout << "Transfer average geometric quantities to zone 0." << endl;
   if (harmonic_balance){
     for (iTimeInstance = 0; iTimeInstance < nTimeInstances; iTimeInstance++) {
-      jTimeInstance = iTimeInstance;
+//      jTimeInstance = iTimeInstance;
       for (iGeomZone = 1; iGeomZone < nGeomZones; iGeomZone++) {
-        jTimeInstance += nTimeInstances;
-        transfer_container[jTimeInstance][iTimeInstance]->GatherAverageTurboGeoValues(geometry_container[jTimeInstance][MESH_0],
-            geometry_container[iTimeInstance][MESH_0], iGeomZone);
+//        jTimeInstance += nTimeInstances;
+        donorZone = ((iGeomZone-1) * nTimeInstances)+iTimeInstance;
+        targetZone = ((iGeomZone) * nTimeInstances)+iTimeInstance;
+        transfer_container[targetZone][donorZone]->GatherAverageTurboGeoValues(geometry_container[targetZone][MESH_0],
+            geometry_container[donorZone][MESH_0], iGeomZone);
       }
     }
   }
@@ -2847,8 +2854,10 @@ void CDriver::TurbomachineryPreprocessing(){
     if (rank == MASTER_NODE) cout << "Preprocess Harmonic Balance interface." << endl;
     for (iTimeInstance = 0; iTimeInstance < nTotTimeInstances; iTimeInstance++) {
       for (jTimeInstance = 0; jTimeInstance < nTotTimeInstances; jTimeInstance++)
-        if(jTimeInstance != iTimeInstance && interpolator_container[iTimeInstance][jTimeInstance] != NULL)
+        if(jTimeInstance != iTimeInstance && interpolator_container[iTimeInstance][jTimeInstance] != NULL){
+          cout<<"iInstance : "<<iTimeInstance<<" jInstance :: "<<jTimeInstance<<endl;
           interpolator_container[iTimeInstance][jTimeInstance]->SetSpanWiseLevels(config_container[jTimeInstance]);
+        }
     }
 
     for (iTimeInstance = 0; iTimeInstance < nTotTimeInstances; iTimeInstance++) {
