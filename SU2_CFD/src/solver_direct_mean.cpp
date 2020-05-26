@@ -9892,7 +9892,7 @@ void CEulerSolver::BC_TurboRiemann(CGeometry *geometry, CSolver **solver_contain
           T_Total  = config->GetRiemann_Var2(Marker_Tag);
           Flow_Dir = config->GetRiemann_FlowDir(Marker_Tag);
 
-          P_Total = P_Total+(P_Total*config->GetHarmonicBalance_InAmp()*sin(6.2831853071796*deltaT*iZone));
+          P_Total = P_Total+(P_Total*config->GetHarmonicBalance_InAmp()*sin(16686.265254*deltaT*iZone));
 //          cout<<"iZone :: "<<iZone<<" P_Tot :: "<<P_Total<<endl;
 
           /*--- Non-dim. the inputs if necessary. ---*/
