@@ -2552,6 +2552,7 @@ void CDriver::Interface_Preprocessing() {
 
           case TURBO_INTERPOLATION:
             interpolator_container[donorZone][targetZone] = new CTurboInterpolation(geometry_container, config_container, donorZone, targetZone);
+            cout<<"doner :: "<<donorZone<<" target :: "<<targetZone<<endl;
             if (rank == MASTER_NODE) cout << "Turbomachinery interface interpolation." << endl;
 
             break;
@@ -2774,23 +2775,38 @@ void CDriver::TurbomachineryPreprocessing(){
 
   if (harmonic_balance){
     if (rank == MASTER_NODE) cout << "Set span-wise sections between zone interfaces." << endl;
+    int original_val;
     for (iTimeInstance = 0; iTimeInstance < nTimeInstances; iTimeInstance++) {
       jTimeInstance = iTimeInstance;
       for (iGeomZone = 1; iGeomZone < nGeomZones; iGeomZone++) {
         jTimeInstance += nTimeInstances;
+        original_val = iTimeInstance;
+        iTimeInstance += nTimeInstances*(iGeomZone-1);
+        cout << "set spanwise section -- jInstance :: "<< jTimeInstance << "  Iiinstance :: "<< iTimeInstance << endl; 
         transfer_container[jTimeInstance][iTimeInstance]->SetSpanWiseLevels(config_container[jTimeInstance], config_container[iTimeInstance]);
+      	iTimeInstance= original_val;
+        
       }
     }
   }
 
   if (rank == MASTER_NODE) cout << "Transfer average geometric quantities to zone 0." << endl;
   if (harmonic_balance){
+  	int original_val;
+    cout << " transfer size :: "<< sizeof(transfer_container)<< endl;
     for (iTimeInstance = 0; iTimeInstance < nTimeInstances; iTimeInstance++) {
       jTimeInstance = iTimeInstance;
       for (iGeomZone = 1; iGeomZone < nGeomZones; iGeomZone++) {
         jTimeInstance += nTimeInstances;
+        original_val = iTimeInstance;
+        iTimeInstance += nTimeInstances*(iGeomZone-1);
+    
+        cout << "transfer avg geometric -- Donor :: "<< jTimeInstance << "  target :: "<< iTimeInstance << " Donor zone geom "<< iGeomZone<< endl;
         transfer_container[jTimeInstance][iTimeInstance]->GatherAverageTurboGeoValues(geometry_container[jTimeInstance][MESH_0],
-            geometry_container[iTimeInstance][MESH_0], iGeomZone);
+            geometry_container[original_val][MESH_0], iGeomZone);
+        
+        iTimeInstance= original_val;
+      
       }
     }
   }
@@ -2851,11 +2867,19 @@ void CDriver::TurbomachineryPreprocessing(){
                 config_container[iTimeInstance], config_container[jTimeInstance], iMarkerInt);
       }
     }
+    int donor_index;
+    int target_index;
+    for (iTimeInstance = 0; iTimeInstance < nTimeInstances; iTimeInstance++) {
+      for (iGeomZone = 1; iGeomZone < nGeomZones; iGeomZone++){
+        donor_index = (iGeomZone-1)*nTimeInstances+iTimeInstance;
+		    target_index = (iGeomZone)*nTimeInstances+iTimeInstance;
+        if( interpolator_container[donor_index][target_index] != NULL && interpolator_container[target_index][donor_index] != NULL){
+        	cout << "set transfer avg geometric -- :: Zone "<< donor_index << "  <--> Zone "<< target_index << endl;
 
-    for (iTimeInstance = 0; iTimeInstance < nTotTimeInstances; iTimeInstance++) {
-      for (jTimeInstance = 0; jTimeInstance < nTotTimeInstances; jTimeInstance++)
-        if(jTimeInstance != iTimeInstance && interpolator_container[iTimeInstance][jTimeInstance] != NULL)
-          interpolator_container[iTimeInstance][jTimeInstance]->Set_TransferCoeff(config_container);
+          interpolator_container[donor_index][target_index]->Set_TransferCoeff(config_container);
+          interpolator_container[target_index][donor_index]->Set_TransferCoeff(config_container);
+        }
+      }
     }
   }
 
@@ -5360,6 +5384,8 @@ void CHBMultiZoneDriver::Run() {
 
   unsigned long ExtIter = config_container[ZONE_0]->GetExtIter();
   int rank = MASTER_NODE;
+  int donor_index;
+  int target_index;
 
 #ifdef HAVE_MPI
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -5367,7 +5393,6 @@ void CHBMultiZoneDriver::Run() {
 
   /*--- Run a single iteration of a Harmonic Balance problem. Preprocess all
    all zones before beginning the iteration. ---*/
-
   for (iZone = 0; iZone < nZone; iZone++)
     SetHarmonicBalance(iZone);
 
@@ -5378,11 +5403,15 @@ void CHBMultiZoneDriver::Run() {
         surface_movement, grid_movement, FFDBox, iTimeInstance);
 
   /*--- For each time instance update transfer data ---*/
-  for (iTimeInstance = 0; iTimeInstance < nTotTimeInstances; iTimeInstance++){
-    for (jTimeInstance = 0; jTimeInstance < nTotTimeInstances; jTimeInstance++){
-      if(jTimeInstance != iTimeInstance && transfer_container[iTimeInstance][jTimeInstance] != NULL){
-        Transfer_Data(iTimeInstance, jTimeInstance);
-      }
+  for (iTimeInstance = 0; iTimeInstance < nTimeInstances; iTimeInstance++){
+    for (iGeomZone = 1; iGeomZone < nGeomZones; iGeomZone++){
+      donor_index = (iGeomZone-1)*nTimeInstances+iTimeInstance;
+      target_index = (iGeomZone)*nTimeInstances+iTimeInstance;
+      // if(transfer_container[iTimeInstance][jTimeInstance] != NULL){
+        cout << " Transfer -------  Zones :: " << donor_index << "  <--> " << target_index << endl;
+        Transfer_Data(donor_index, target_index);
+        Transfer_Data(target_index, donor_index);
+      //}
     }
   }
 
@@ -5403,8 +5432,9 @@ void CHBMultiZoneDriver::Run() {
         solver_container, iTimeInstance);
 
 //TODO move here SetHarmonicBalance
-
+  
   if (rank == MASTER_NODE){
+cout<<" +++++++++++++++++++++++ nTimeInstances +++++++++++++++++++++++++ :: "<<nTimeInstances<<endl;
     for (iTimeInstance = 0; iTimeInstance < nTimeInstances; iTimeInstance++)
       SetTurboPerformance(iTimeInstance);
   }
@@ -5516,14 +5546,18 @@ void CHBMultiZoneDriver::Update() {
 
 void CHBMultiZoneDriver::SetTurboPerformance(unsigned short iTimeInstance){
 
-  unsigned short donorZone;
+  unsigned short donorZone, original_val;
   //IMPORTANT this approach of multi-zone performances rely upon the fact that turbomachinery markers follow the natural (stator-rotor) development of the real machine.
   /* --- transfer the local turboperfomance quantities (for each blade)  from all the donorZones to the targetZone (ZONE_0) ---*/
   jTimeInstance = iTimeInstance;
   for (iGeomZone = 1; iGeomZone < nGeomZones; iGeomZone++) {
     jTimeInstance += nTimeInstances;
+    original_val = iTimeInstance;
+    iTimeInstance += nTimeInstances*(iGeomZone-1); 
+    cout << " set performance Donor :: " << jTimeInstance << "  Target :: "<< iTimeInstance <<" donor iGeomZone :: " << iGeomZone << endl;
     transfer_container[jTimeInstance][iTimeInstance]->GatherAverageValues(solver_container[jTimeInstance][MESH_0][FLOW_SOL],
-        solver_container[iTimeInstance][MESH_0][FLOW_SOL], iGeomZone);
+        solver_container[original_val][MESH_0][FLOW_SOL], iGeomZone);
+ iTimeInstance = original_val;
   }
 
   /* --- compute turboperformance for each stage and the global machine ---*/

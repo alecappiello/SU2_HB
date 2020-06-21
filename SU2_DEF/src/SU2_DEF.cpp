@@ -212,7 +212,7 @@ int main(int argc, char *argv[]) {
       /*--- Surface grid deformation ---*/
       
       if (rank == MASTER_NODE) cout << "Performing the deformation of the surface grid." << endl;
-      surface_movement[iZone]->SetSurface_Deformation(geometry_container[iZone], config_container[iZone]);
+      surface_movement[iZone]->SetSurface_Deformation(geometry_container[iZone], config_container[iZone], iZone);
       
       if (config_container[iZone]->GetDesign_Variable(0) != FFD_SETTING) {
         
@@ -280,7 +280,7 @@ int main(int argc, char *argv[]) {
   bool NewFile = false;
   if (config_container[ZONE_0]->GetDesign_Variable(0) == NO_DEFORMATION) NewFile = true;
   
-  output->SetMesh_Files(geometry_container, config_container, nZone, NewFile, true);
+  output->SetMesh_Files(geometry_container, config_container, iZone, NewFile, true);
   
   if (config_container[ZONE_0]->GetDesign_Variable(0) != NO_DEFORMATION) {
   

@@ -130,6 +130,7 @@ void CDiscAdjSolver::SetRecording(CGeometry* geometry, CConfig *config){
   bool time_n_needed  = ((config->GetUnsteady_Simulation() == DT_STEPPING_1ST) ||
       (config->GetUnsteady_Simulation() == DT_STEPPING_2ND)),
   time_n1_needed = config->GetUnsteady_Simulation() == DT_STEPPING_2ND;
+  bool harmonic_balance = config->GetUnsteady_Simulation() == HARMONIC_BALANCE;
 
   unsigned long iPoint;
   unsigned short iVar;
@@ -139,6 +140,7 @@ void CDiscAdjSolver::SetRecording(CGeometry* geometry, CConfig *config){
   for (iPoint = 0; iPoint < nPoint; iPoint++) {
     direct_solver->node[iPoint]->SetSolution(node[iPoint]->GetSolution_Direct());
   }
+  if (harmonic_balance){
   for (iPoint = 0; iPoint < nPoint; iPoint++) {
     direct_solver->node[iPoint]->SetSolution_Old(node[iPoint]->GetSolution_Direct_Old());
   }
@@ -147,6 +149,7 @@ void CDiscAdjSolver::SetRecording(CGeometry* geometry, CConfig *config){
     for (iVar = 0; iVar < nVar; iVar++) {
       direct_solver->node[iPoint]->SetHarmonicBalance_Source(iVar, node[iPoint]->GetHBSource_Direct()[iVar]);
     }
+  }
   }
 
   if (time_n_needed) {
