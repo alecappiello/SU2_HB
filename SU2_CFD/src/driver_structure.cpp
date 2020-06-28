@@ -5408,7 +5408,7 @@ void CHBMultiZoneDriver::Run() {
       donor_index = (iGeomZone-1)*nTimeInstances+iTimeInstance;
       target_index = (iGeomZone)*nTimeInstances+iTimeInstance;
       // if(transfer_container[iTimeInstance][jTimeInstance] != NULL){
-        cout << " Transfer -------  Zones :: " << donor_index << "  <--> " << target_index << endl;
+//        cout << " Transfer -------  Zones :: " << donor_index << "  <--> " << target_index << endl;
         Transfer_Data(donor_index, target_index);
         Transfer_Data(target_index, donor_index);
       //}
@@ -5434,7 +5434,7 @@ void CHBMultiZoneDriver::Run() {
 //TODO move here SetHarmonicBalance
   
   if (rank == MASTER_NODE){
-cout<<" +++++++++++++++++++++++ nTimeInstances +++++++++++++++++++++++++ :: "<<nTimeInstances<<endl;
+//cout<<" +++++++++++++++++++++++ nTimeInstances +++++++++++++++++++++++++ :: "<<nTimeInstances<<endl;
     for (iTimeInstance = 0; iTimeInstance < nTimeInstances; iTimeInstance++)
       SetTurboPerformance(iTimeInstance);
   }
@@ -5554,7 +5554,7 @@ void CHBMultiZoneDriver::SetTurboPerformance(unsigned short iTimeInstance){
     jTimeInstance += nTimeInstances;
     original_val = iTimeInstance;
     iTimeInstance += nTimeInstances*(iGeomZone-1); 
-    cout << " set performance Donor :: " << jTimeInstance << "  Target :: "<< iTimeInstance <<" donor iGeomZone :: " << iGeomZone << endl;
+//    cout << " set performance Donor :: " << jTimeInstance << "  Target :: "<< iTimeInstance <<" donor iGeomZone :: " << iGeomZone << endl;
     transfer_container[jTimeInstance][iTimeInstance]->GatherAverageValues(solver_container[jTimeInstance][MESH_0][FLOW_SOL],
         solver_container[original_val][MESH_0][FLOW_SOL], iGeomZone);
  iTimeInstance = original_val;
