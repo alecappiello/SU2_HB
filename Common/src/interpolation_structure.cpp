@@ -2929,7 +2929,7 @@ void CTurboInterpolation::Set_TransferCoeff(CConfig **config) {
           /*--- Coordinates of the boundary point ---*/
           AngularCoord_Target = target_geometry->turbovertex[markTarget][iSpan][iVertexTarget]->GetAngularCoord();
 
-          mindist    = HUGE;
+          mindist    = 1E10;
           pProcessor = 0;
           su2double donor_count = 0;
 
@@ -3036,7 +3036,7 @@ void CTurboInterpolation::Collect_TurboVertexInfo(bool faces, int markDonor, int
 
   for (iVertex = 0; iVertex < MaxLocalVertex_Donor; iVertex++) {
     Buffer_Send_GlobalPoint[iVertex] = 0;
-    Buffer_Send_Coord[iVertex] = HUGE;
+    Buffer_Send_Coord[iVertex] = 1E10;
     for (iDim = 0; iDim < nDim; iDim++) {
       if (faces)
         Buffer_Send_Normal[iVertex*nDim+iDim] = 0.0;

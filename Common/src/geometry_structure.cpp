@@ -11234,7 +11234,7 @@ void CPhysicalGeometry::UpdateTurboVertex(CConfig *config, unsigned short val_iZ
   /*--- Initialize auxiliary pointers ---*/
   TurboNormal      = new su2double[3];
   su2double ang_coord, delta_grid_movement;
-  su2double max = -HUGE;
+  su2double max = -1E10;
 #ifdef HAVE_MPI
 //  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 //  MPI_Comm_size(MPI_COMM_WORLD, &size);
@@ -11350,7 +11350,7 @@ void CPhysicalGeometry::UpdateTurboVertex(CConfig *config, unsigned short val_iZ
       }
     }
 #ifdef HAVE_MPI
-    MyMax     = max;      max    = -HUGE;
+    MyMax     = max;      max    = -1E10;
     SU2_MPI::Allreduce(&MyMax, &max, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
 #endif
     for (iMarker = 0; iMarker < nMarker; iMarker++){
